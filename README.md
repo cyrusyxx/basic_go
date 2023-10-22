@@ -1,2 +1,2 @@
 # basic_go
-For go basic learning.
+基本没写啥

@@ -2,9 +2,9 @@
 
 # JSON 数据
 json_data='{
-    "email": "123@qq.com",
-    "password": "helloworld123",
-    "confirmPassword": "helloworld123"
+    "email": "9328123@qq.com",
+    "password": "Cc@002300",
+    "confirmPassword": "Cc@002300"
 }'
 
 # 发送 POST 请求
