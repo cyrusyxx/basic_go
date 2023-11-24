@@ -4,6 +4,8 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"webook/webook/internal/domain"
+	"webook/webook/internal/service"
 )
 
 // Email and password regexp pattern
@@ -16,12 +18,14 @@ const (
 type UserHandler struct {
 	emailRegExp   *regexp.Regexp
 	passwordRegex *regexp.Regexp
+	svc           *service.UserService
 }
 
-func NewUserHandler() *UserHandler {
+func NewUserHandler(svc *service.UserService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:   regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegex: regexp.MustCompile(passwordRegexPattern, regexp.None),
+		svc:           svc,
 	}
 }
 
@@ -36,6 +40,7 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 
 // Sign up
 func (h *UserHandler) SignUp(ctx *gin.Context) {
+	// verify
 	type SignupReq struct {
 		Email           string `json:"email"`
 		Password        string `json:"password"`
@@ -65,7 +70,16 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "Password pattern is wrong\n")
 	}
 
-	// Return the string to browser
+	// real signup
+	err = h.svc.Signup(ctx, domain.User{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "system error")
+		return
+	}
+	// Success:Return the string to browser
 	ctx.String(http.StatusOK, "HELLO ITS IN SIGNUP")
 }
 
