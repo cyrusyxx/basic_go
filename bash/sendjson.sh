@@ -2,7 +2,7 @@
 
 # JSON 数据
 json_data='{
-    "email": "9328123@qq.com",
+    "email": "5522353@qq.com",
     "password": "Cc@002300",
     "confirmPassword": "Cc@002300"
 }'

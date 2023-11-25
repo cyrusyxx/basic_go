@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"gorm.io/gorm"
+	"time"
 )
 
 type UserDAO struct {
@@ -10,8 +11,8 @@ type UserDAO struct {
 }
 
 type User struct {
-	Id       int64 `gorm:"primaryKey"`
-	Email    string
+	Id       int64  `gorm:"primaryKey, autoncrement"` // There is a Bug!!!
+	Email    string `gorm:"unique"`
 	Password string
 	// Create time
 	Ctime int64
@@ -19,6 +20,16 @@ type User struct {
 	Utime int64
 }
 
+func NewUserDAO(db *gorm.DB) *UserDAO {
+	return &UserDAO{
+		db: db,
+	}
+
+}
+
 func (dao *UserDAO) Insert(ctx context.Context, u User) error {
+	now := time.Now().UnixMilli()
+	u.Ctime = now
+	u.Utime = now
 	return dao.db.WithContext(ctx).Create(&u).Error
 }
