@@ -75,12 +75,15 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		Email:    req.Email,
 		Password: req.Password,
 	})
-	if err != nil {
-		ctx.String(http.StatusOK, "system error")
-		return
+	switch err {
+	case nil:
+		// Success:Return the string to browser
+		ctx.String(http.StatusOK, "HELLO ITS IN SIGNUP")
+	case service.ErrDuplicateEmail:
+		ctx.String(http.StatusOK, "Email Duplicate !!")
+	default:
+		ctx.String(http.StatusOK, "System Error !!")
 	}
-	// Success:Return the string to browser
-	ctx.String(http.StatusOK, "HELLO ITS IN SIGNUP")
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {

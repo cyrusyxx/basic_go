@@ -6,6 +6,8 @@ import (
 	"webook/webook/internal/repository/dao"
 )
 
+var ErrDuplicateEmail = dao.ErrDuplicateEmail
+
 type UserRepository struct {
 	dao *dao.UserDAO
 }

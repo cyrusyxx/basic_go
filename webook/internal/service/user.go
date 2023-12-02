@@ -7,6 +7,8 @@ import (
 	"webook/webook/internal/repository"
 )
 
+var ErrDuplicateEmail = repository.ErrDuplicateEmail
+
 type UserService struct {
 	repo *repository.UserRepository
 }
