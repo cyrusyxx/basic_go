@@ -11,6 +11,7 @@ import (
 	"webook/webook/internal/service"
 	"webook/webook/internal/web"
 )
+//none
 
 func main() {
 	// Init Server and Database
