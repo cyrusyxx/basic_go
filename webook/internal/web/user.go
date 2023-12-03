@@ -86,11 +86,30 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) Profile(ctx *gin.Context) {
+func (h *UserHandler) Login(ctx *gin.Context) {
+	type SignupReq struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	var req SignupReq
 
+	// Get the context content
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	err := h.svc.Login(ctx, req.Email, req.Password)
+	switch err {
+	case nil:
+		ctx.String(http.StatusOK, "Login Seccess!!")
+	case service.ErrInvalidUserOrPassword:
+		ctx.String(http.StatusOK, "User not found or password is wrong")
+	default:
+		ctx.String(http.StatusOK, "System Error!!")
+	}
 }
 
-func (h *UserHandler) Login(ctx *gin.Context) {
+func (h *UserHandler) Profile(ctx *gin.Context) {
 
 }
 
