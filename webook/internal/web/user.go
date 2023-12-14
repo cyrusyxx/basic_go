@@ -11,7 +11,8 @@ import (
 
 // Email and password regexp pattern
 const (
-	emailRegexPattern    = `^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$`
+	emailRegexPattern = `\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*`
+	//emailRegexPattern    = `^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$`
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,70}$`
 )
 
@@ -61,6 +62,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	}
 	if !isEmail {
 		ctx.String(http.StatusOK, "Email pattern is wrong\n")
+		return
 	}
 	// Handle the keyword pattern
 	isPassword, err := h.passwordRegex.MatchString(req.Password)
@@ -69,6 +71,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	}
 	if !isPassword {
 		ctx.String(http.StatusOK, "Password pattern is wrong\n")
+		return
 	}
 
 	// real signup
@@ -103,7 +106,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	switch err {
 	case nil:
 		sess := sessions.Default(ctx)
-		sess.Set("userID", u.Id)
+		sess.Set("userId", u.Id)
 		sess.Options(sessions.Options{
 			MaxAge:   900,
 			HttpOnly: true,
@@ -122,9 +125,9 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
-
+	ctx.String(http.StatusOK, "hello form profile")
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
-
+	ctx.String(http.StatusOK, "hello form edit")
 }
