@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -10,7 +12,9 @@ import (
 	"webook/webook/internal/repository/dao"
 	"webook/webook/internal/service"
 	"webook/webook/internal/web"
+	"webook/webook/internal/web/middleware"
 )
+
 //none
 
 func main() {
@@ -28,12 +32,13 @@ func main() {
 func initServer() *gin.Engine {
 	server := gin.Default()
 	handlecors(server)
+	handleSessions(server)
 	return server
 }
 
 func initDB() *gorm.DB {
 	// Connect Database
-	dsn := "root:030208@tcp(cyruss.cn:3306)/test?charset=utf8&parseTime=True&loc=Local"
+	dsn := "root:030208@tcp(cyrusss.cn:3306)/test?charset=utf8&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -71,6 +76,12 @@ func handlecors(server *gin.Engine) {
 		//},
 		MaxAge: 12 * time.Hour,
 	}))
+}
+
+func handleSessions(server *gin.Engine) {
+	login := middleware.LoginMiddlewareBuilder{}
+	store := cookie.NewStore([]byte("secret"))
+	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
 }
 
 /*
