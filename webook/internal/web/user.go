@@ -124,10 +124,29 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) Profile(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "hello form profile")
-}
-
 func (h *UserHandler) Edit(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "hello form edit")
+	type EditReq struct {
+		NickName    string `json:"nickname"`
+		Birthday    string `json:"birthday"`
+		Description string `json:"description"`
+	}
+	var req EditReq
+
+	sess := sessions.Default(ctx)
+	uid := sess.Get("userId").(int64)
+	//ctx.String(http.StatusOK, "uid is %d", uid)
+
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	err := h.svc.Edit(ctx, uid, req.NickName, req.Birthday, req.Description)
+	if err != nil {
+		return
+	}
+}
+
+func (h *UserHandler) Profile(ctx *gin.Context) {
+	ctx.String(http.StatusOK, "hello form profile")
 }

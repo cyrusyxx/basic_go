@@ -28,6 +28,15 @@ func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
 	})
 }
 
+func (repo *UserRepository) EditProfile(ctx context.Context, u domain.User) error {
+	return repo.dao.Edit(ctx, dao.User{
+		Id:          u.Id,
+		NickName:    u.NickName,
+		Birthday:    u.Birthday,
+		Description: u.Description,
+	})
+}
+
 func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	u, err := repo.dao.FindByEmail(ctx, email)
 	if err != nil {
@@ -38,8 +47,11 @@ func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (doma
 
 func (repo *UserRepository) toDomain(u dao.User) domain.User {
 	return domain.User{
-		Id:       u.Id,
-		Email:    u.Email,
-		Password: u.Password,
+		Id:          u.Id,
+		Email:       u.Email,
+		Password:    u.Password,
+		NickName:    u.NickName,
+		Birthday:    u.Birthday,
+		Description: u.Description,
 	}
 }

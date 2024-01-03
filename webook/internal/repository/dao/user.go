@@ -21,6 +21,11 @@ type User struct {
 	Id       int64  `gorm:"primaryKey, autoncrement"` // There is a Bug!!!
 	Email    string `gorm:"unique"`
 	Password string
+
+	NickName    string
+	Birthday    string
+	Description string
+
 	// Create time
 	Ctime int64
 	// Update time
@@ -31,13 +36,32 @@ func NewUserDAO(db *gorm.DB) *UserDAO {
 	return &UserDAO{
 		db: db,
 	}
+}
 
+func (dao UserDAO) Edit(ctx context.Context, u User) error {
+	var fu User
+	err := dao.db.WithContext(ctx).Where("id=?", u.Id).First(&fu).Error
+	if err != nil {
+		return err
+	}
+
+	fu.NickName = u.NickName
+	fu.Birthday = u.Birthday
+	fu.Description = u.Description
+
+	err = dao.db.Save(fu).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (dao *UserDAO) Insert(ctx context.Context, u User) error {
 	now := time.Now().UnixMilli()
 	u.Ctime = now
 	u.Utime = now
+
 	err := dao.db.WithContext(ctx).Create(&u).Error
 	if me, ok := err.(*mysql.MySQLError); ok {
 		const duplicateErr uint16 = 1062

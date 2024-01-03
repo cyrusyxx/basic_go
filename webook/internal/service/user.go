@@ -30,7 +30,6 @@ func (svc *UserService) Signup(ctx context.Context, u domain.User) error {
 	}
 	u.Password = string(hash)
 	return svc.repo.Create(ctx, u)
-
 }
 
 func (svc *UserService) Login(ctx context.Context, email string, password string) (domain.User, error) {
@@ -47,4 +46,13 @@ func (svc *UserService) Login(ctx context.Context, email string, password string
 		return domain.User{}, ErrInvalidUserOrPassword
 	}
 	return u, nil
+}
+
+func (svc *UserService) Edit(ctx context.Context, uid int64, nickname string, birthday string, description string) error {
+	return svc.repo.EditProfile(ctx, domain.User{
+		Id:          uid,
+		NickName:    nickname,
+		Birthday:    birthday,
+		Description: description,
+	})
 }
