@@ -142,6 +142,24 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		return
 	}
 
+	if len(req.NickName) > 8 {
+		// 处理校验错误
+		ctx.String(http.StatusOK, "Invalid nickname length")
+		return
+	}
+
+	if len(req.Birthday) != 10 {
+		// 处理校验错误
+		ctx.String(http.StatusOK, "Invalid birthday length")
+		return
+	}
+
+	if len(req.Description) > 50 {
+		// 处理校验错误
+		ctx.String(http.StatusOK, "Invalid description length")
+		return
+	}
+
 	err := h.svc.Edit(ctx, uid, req.NickName, req.Birthday, req.Description)
 	if err != nil {
 		return
