@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -148,5 +149,19 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "hello form profile")
+	ctx.String(http.StatusOK, "hello form profile\n")
+
+	sess := sessions.Default(ctx)
+	uid := sess.Get("userId").(int64)
+
+	u, err := h.svc.Profile(ctx, uid)
+	if err != nil {
+		return
+	}
+
+	response := fmt.Sprintf("id=%d\nEmail=%s\nNickName=%s\nBirthday=%s\nDescription=%s\n",
+		u.Id, u.Email, u.NickName, u.Birthday, u.Description)
+
+	// 返回用户信息
+	ctx.String(http.StatusOK, response)
 }

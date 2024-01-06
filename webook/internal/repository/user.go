@@ -37,6 +37,14 @@ func (repo *UserRepository) EditProfile(ctx context.Context, u domain.User) erro
 	})
 }
 
+func (repo *UserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
+	u, err := repo.dao.FindByID(ctx, id)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.toDomain(u), nil
+}
+
 func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	u, err := repo.dao.FindByEmail(ctx, email)
 	if err != nil {
