@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -80,7 +80,13 @@ func handlecors(server *gin.Engine) {
 
 func handleSessions(server *gin.Engine) {
 	login := middleware.LoginMiddlewareBuilder{}
-	store := cookie.NewStore([]byte("secret"))
+	//store := cookie.NewStore([]byte("secret"))
+	store, err := redis.NewStore(16, "tcp", "cyrusss.cn:6379",
+		"", []byte("RnytReTSSNTSRsbrmoineytbsVSDbnrt"),
+		[]byte("RnytReTSSNjdfldsmoineytbsVSDbnrt"))
+	if err != nil {
+		return
+	}
 	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
 }
 
