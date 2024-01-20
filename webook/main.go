@@ -2,9 +2,8 @@ package main
 
 import (
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"webook/webook/internal/service"
 	"webook/webook/internal/web"
 	"webook/webook/internal/web/middleware"
+	"webook/webook/pkg/ginx/middleware/ratelimit"
 )
 
 //none
@@ -22,7 +22,7 @@ func main() {
 	server := initServer()
 	db := initDB()
 
-	// Init Userhandler
+	// Init UserHandler
 	initUserHandler(db, server)
 
 	// Run Server
@@ -32,7 +32,9 @@ func main() {
 func initServer() *gin.Engine {
 	server := gin.Default()
 	handlecors(server)
-	handleSessions(server)
+	//handleSessions(server)
+	handlejwt(server)
+	handleRatelimit(server)
 	return server
 }
 
@@ -65,10 +67,11 @@ func initUserHandler(db *gorm.DB, server *gin.Engine) {
 // Middle Were Handler
 func handlecors(server *gin.Engine) {
 	server.Use(cors.New(cors.Config{
-		AllowAllOrigins: true,
-		//AllowOrigins:     []string{"http://localhost:3000"},
+		//AllowAllOrigins: true,
+		AllowOrigins: []string{"http://localhost:30001"},
 		//AllowMethods: []string{"PUT", "PATCH", "POST", "GET"},
-		AllowHeaders: []string{"Content-Type"},
+		AllowHeaders:  []string{"Content-Type", "Authorization"},
+		ExposeHeaders: []string{"x-jwt-token"},
 		//ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		//AllowOriginFunc: func(origin string) bool {
@@ -78,6 +81,19 @@ func handlecors(server *gin.Engine) {
 	}))
 }
 
+func handlejwt(server *gin.Engine) {
+	login := middleware.LoginJWTMiddlewareBuilder{}
+	server.Use(login.CheckLogin())
+}
+
+func handleRatelimit(server *gin.Engine) {
+	redisDB := redis.NewClient(&redis.Options{
+		Addr: "cyrusss.cn:6379",
+	})
+	server.Use(ratelimit.NewBuilder(redisDB, time.Minute, 100).Build())
+}
+
+/*
 func handleSessions(server *gin.Engine) {
 	login := middleware.LoginMiddlewareBuilder{}
 	//store := cookie.NewStore([]byte("secret"))
@@ -89,24 +105,4 @@ func handleSessions(server *gin.Engine) {
 	}
 	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
 }
-
-/*
-// JSON 数据
-var json_data = {
-email: "9328123@qq.com",
-password: "Cc@002300",
-confirmPassword: "Cc@002300"
-};
-
-// 发送 POST 请求
-fetch('http://localhost:8080/users/signup', {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json'
-},
-body: JSON.stringify(json_data)
-})
-.then(response => response.json())
-.then(data => console.log(data))
-.catch(error => console.error(error));
 */

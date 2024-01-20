@@ -5,7 +5,9 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
+	"time"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/service"
 )
@@ -17,11 +19,18 @@ const (
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,70}$`
 )
 
+var SigKey = []byte("ukRIDSD0JpWD5Qv0P46Y8IGLjB2uvShj")
+
 // UserHandler Struct
 type UserHandler struct {
 	emailRegExp   *regexp.Regexp
 	passwordRegex *regexp.Regexp
 	svc           *service.UserService
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	Uid int64
 }
 
 func NewUserHandler(svc *service.UserService) *UserHandler {
@@ -32,16 +41,17 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 	}
 }
 
-// Register Router
+// RegisterRoutes Register Router
 func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	ug := server.Group("/users")
 	ug.POST("/signup", h.SignUp)
-	ug.POST("/login", h.Login)
+	//ug.POST("/login", h.Login)
+	ug.POST("/login", h.LoginJWT)
 	ug.POST("/edit", h.Edit)
 	ug.GET("/profile", h.Profile)
 }
 
-// Sign up
+// SignUp Sign up
 func (h *UserHandler) SignUp(ctx *gin.Context) {
 	// verify
 	type SignupReq struct {
@@ -109,7 +119,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		sess := sessions.Default(ctx)
 		sess.Set("userId", u.Id)
 		sess.Options(sessions.Options{
-			MaxAge:   900,
+			MaxAge:   300,
 			HttpOnly: true,
 		})
 		err := sess.Save()
@@ -117,12 +127,56 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 			ctx.String(http.StatusOK, "System Error!!")
 			return
 		}
-		ctx.String(http.StatusOK, "Login Seccess!!")
+		ctx.String(http.StatusOK, "Login Success!!")
 	case service.ErrInvalidUserOrPassword:
 		ctx.String(http.StatusOK, "User not found or password is wrong")
 	default:
 		ctx.String(http.StatusOK, "System Error!!")
 	}
+}
+
+func (h *UserHandler) LoginJWT(ctx *gin.Context) {
+	type SignupReq struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	var req SignupReq
+
+	// Get the context content
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	u, err := h.svc.Login(ctx, req.Email, req.Password)
+	switch err {
+	case nil:
+		uc := UserClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    "",
+				Subject:   "",
+				Audience:  nil,
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+				NotBefore: nil,
+				IssuedAt:  nil,
+				ID:        "",
+			},
+			Uid: u.Id,
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
+		tokenStr, err := token.SignedString(SigKey)
+		if err != nil {
+			ctx.String(http.StatusOK, "System Error!!")
+			return
+		}
+		ctx.Header("x-jwt-token", tokenStr)
+
+		ctx.String(http.StatusOK, "Login Success!!")
+	case service.ErrInvalidUserOrPassword:
+		ctx.String(http.StatusOK, "User not found or password is wrong")
+	default:
+		ctx.String(http.StatusOK, "System Error!!")
+	}
+
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
