@@ -19,6 +19,7 @@ import (
 
 func main() {
 	// Init Server and Database
+	gin.SetMode(gin.DebugMode)
 	server := initServer()
 	db := initDB()
 
@@ -68,7 +69,7 @@ func initUserHandler(db *gorm.DB, server *gin.Engine) {
 func handlecors(server *gin.Engine) {
 	server.Use(cors.New(cors.Config{
 		//AllowAllOrigins: true,
-		AllowOrigins: []string{"http://localhost:30001"},
+		AllowOrigins: []string{"http://localhost:30001", "http://localhost:3000"},
 		//AllowMethods: []string{"PUT", "PATCH", "POST", "GET"},
 		AllowHeaders:  []string{"Content-Type", "Authorization"},
 		ExposeHeaders: []string{"x-jwt-token"},

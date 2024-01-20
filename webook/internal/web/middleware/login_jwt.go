@@ -34,7 +34,7 @@ func (m LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 
 		tokenStr := segs[1]
 		var uc web.UserClaims
-		token, err := jwt.ParseWithClaims(tokenStr, uc, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenStr, &uc, func(token *jwt.Token) (interface{}, error) {
 			return web.SigKey, nil
 		})
 		if err != nil {
@@ -42,6 +42,11 @@ func (m LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 		if !token.Valid {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		if uc.UserAgent != ctx.GetHeader("User-Agent") {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -56,5 +61,6 @@ func (m LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			}
 		}
 		ctx.Set("userclaim", uc)
+
 	}
 }
