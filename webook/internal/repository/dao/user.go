@@ -18,7 +18,7 @@ type UserDAO struct {
 }
 
 type User struct {
-	Id       int64  `gorm:"primaryKey, autoncrement"` // There is a Bug!!!
+	Id       int64  `gorm:"primaryKey, autoincrement"` // There is a Bug!!!
 	Email    string `gorm:"unique"`
 	Password string
 
