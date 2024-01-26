@@ -1,2 +1,2 @@
 # basic_go
-基本没写啥
+作业提交在`homework/`目录

@@ -2,13 +2,36 @@ pipeline {
     agent {
         label 'node'
     }
+    environment {
+        // 配置代理
+        def http_proxy="http://127.0.0.1:10809"
+        def https_proxy="http://127.0.0.1:10809"
+        def no_proxy="localhost,127.0.0.1"
+        def KUBECONFIG="~/.kube/config"
+    }
 
     stages {
-        stage('Hello') {
+        stage('Pull && Build') {
             steps {
-                echo 'Hello, Jenkins!'
+                // git pull 拉取镜像
+                sh 'cd basic_go && git pull origin main'
+                // docker build 打包镜像
+                sh 'docker build --network host -f basic_go/script/Dockerfile -t webook:test .'
+            }
+        }
+        stage('UPLOAD') {
+            steps {
+                // 上传到阿里云镜像仓库, 以便kubernetes使用
+                sh 'docker tag webook:test registry.cn-hangzhou.aliyuncs.com/webook/webook:test'
+                sh 'docker login registry.cn-hangzhou.aliyuncs.com -u Cyrusss -p '
+                sh 'docker push registry.cn-hangzhou.aliyuncs.com/webook/webook:test'
+            }
+        }
+        stage('Kube Run') {
+            steps {
+                // 使用kubenetes部署
+                sh 'sudo kubectl apply -f basic_go/script/webook-deploy.yml'
             }
         }
     }
 }
-
