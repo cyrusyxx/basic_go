@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: webook
-          image: registry.cn-hangzhou.aliyuncs.com/webook/webook:v1
+          image: cyrusyxx/webook:test
           ports:
             - containerPort: 8080

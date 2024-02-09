@@ -41,7 +41,7 @@ func initServer() *gin.Engine {
 
 func initDB() *gorm.DB {
 	// Connect Database
-	dsn := "root:030208@tcp(cyrusss.cn:3306)/test?charset=utf8&parseTime=True&loc=Local"
+	dsn := "root:030208@tcp(cyrusss.top:30997)/test?charset=utf8&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -89,21 +89,7 @@ func handlejwt(server *gin.Engine) {
 
 func handleRatelimit(server *gin.Engine) {
 	redisDB := redis.NewClient(&redis.Options{
-		Addr: "cyrusss.cn:6379",
+		Addr: "cyrusss.top:32699",
 	})
 	server.Use(ratelimit.NewBuilder(redisDB, time.Minute, 100).Build())
 }
-
-/*
-func handleSessions(server *gin.Engine) {
-	login := middleware.LoginMiddlewareBuilder{}
-	//store := cookie.NewStore([]byte("secret"))
-	store, err := redis.NewStore(16, "tcp", "cyrusss.cn:6379",
-		"", []byte("RnytReTSSNTSRsbrmoineytbsVSDbnrt"),
-		[]byte("RnytReTSSNjdfldsmoineytbsVSDbnrt"))
-	if err != nil {
-		return
-	}
-	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
-}
-*/
