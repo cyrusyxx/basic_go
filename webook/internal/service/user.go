@@ -10,7 +10,7 @@ import (
 
 var (
 	ErrDuplicateEmail        = repository.ErrDuplicateEmail
-	ErrInvalidUserOrPassword = errors.New("User Not Found Or Password is wrong")
+	ErrInvalidUserOrPassword = errors.New("user not found or password is wrong")
 )
 
 type UserService struct {

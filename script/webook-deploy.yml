@@ -15,5 +15,13 @@ spec:
       containers:
         - name: webook
           image: cyrusyxx/webook:test
+          args: ["--config", "/config/config.yaml"]
           ports:
             - containerPort: 8080
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: webook-config

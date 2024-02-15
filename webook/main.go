@@ -1,12 +1,16 @@
 package main
 
 import (
+	"github.com/fsnotify/fsnotify"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"time"
+	"path/filepath"
+	"webook/webook/constants"
 	"webook/webook/internal/repository"
 	"webook/webook/internal/repository/dao"
 	"webook/webook/internal/service"
@@ -19,7 +23,8 @@ import (
 
 func main() {
 	// Init Server and Database
-	gin.SetMode(gin.DebugMode)
+	//gin.SetMode(gin.DebugMode)
+	initConfig()
 	server := initServer()
 	db := initDB()
 
@@ -27,7 +32,10 @@ func main() {
 	initUserHandler(db, server)
 
 	// Run Server
-	server.Run(":8080")
+	err := server.Run(":8080")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func initServer() *gin.Engine {
@@ -41,7 +49,7 @@ func initServer() *gin.Engine {
 
 func initDB() *gorm.DB {
 	// Connect Database
-	dsn := "root:030208@tcp(cyrusss.top:30997)/test?charset=utf8&parseTime=True&loc=Local"
+	dsn := viper.GetString("mysql.dsn")
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -65,11 +73,39 @@ func initUserHandler(db *gorm.DB, server *gin.Engine) {
 	hdl.RegisterRoutes(server)
 }
 
+func initConfig() {
+	// Init Pflag
+	configfile := pflag.StringP("config", "c",
+		"config/config.yaml", "config file")
+	pflag.Parse()
+
+	// Init Viper
+	viper.SetConfigFile(filepath.FromSlash(*configfile))
+	err := viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			panic("Config file not found")
+		}
+		if _, ok := err.(viper.ConfigParseError); ok {
+			panic("Config file parse error")
+		}
+		panic(err)
+	}
+
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		println("Config file changed:",
+			e.Name, e.Op)
+	})
+
+	viper.WatchConfig()
+}
+
 // Middle Were Handler
 func handlecors(server *gin.Engine) {
 	server.Use(cors.New(cors.Config{
 		//AllowAllOrigins: true,
-		AllowOrigins: []string{"http://localhost:30001", "http://localhost:3000"},
+		AllowOrigins: []string{"http://localhost:30001",
+			"http://localhost:3000"},
 		//AllowMethods: []string{"PUT", "PATCH", "POST", "GET"},
 		AllowHeaders:  []string{"Content-Type", "Authorization"},
 		ExposeHeaders: []string{"x-jwt-token"},
@@ -78,7 +114,7 @@ func handlecors(server *gin.Engine) {
 		//AllowOriginFunc: func(origin string) bool {
 		//	return strings.Contains(origin, "localhost")
 		//},
-		MaxAge: 12 * time.Hour,
+		MaxAge: constants.MaxCorsAge,
 	}))
 }
 
@@ -88,8 +124,9 @@ func handlejwt(server *gin.Engine) {
 }
 
 func handleRatelimit(server *gin.Engine) {
+	redisaddr := viper.GetString("redis.addr")
 	redisDB := redis.NewClient(&redis.Options{
-		Addr: "cyrusss.top:32699",
+		Addr: redisaddr,
 	})
-	server.Use(ratelimit.NewBuilder(redisDB, time.Minute, 100).Build())
+	server.Use(ratelimit.NewBuilder(redisDB, constants.RateLimitInterval, constants.RateLimitRate).Build())
 }

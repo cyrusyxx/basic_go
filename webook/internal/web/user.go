@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"time"
+	"webook/webook/constants"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/service"
 )
@@ -153,7 +154,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	case nil:
 		uc := UserClaims{
 			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(constants.JwtExpireTime)),
 			},
 			Uid:       u.Id,
 			UserAgent: ctx.GetHeader("User-Agent"),
