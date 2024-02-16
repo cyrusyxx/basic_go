@@ -7,7 +7,8 @@ const (
 )
 
 var (
-	RateLimitInterval = time.Minute
-	MaxCorsAge        = 12 * time.Hour
-	JwtExpireTime     = 30 * time.Minute
+	RateLimitInterval    = time.Minute
+	MaxCorsAge           = 12 * time.Hour
+	JwtExpireTime        = 30 * time.Minute
+	CheckLoginExpireTime = 30 * time.Minute
 )

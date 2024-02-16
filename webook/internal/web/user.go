@@ -55,7 +55,7 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 
 // SignUp Sign up
 func (h *UserHandler) SignUp(ctx *gin.Context) {
-	// verify
+	// Define the request struct
 	type SignupReq struct {
 		Email           string `json:"email"`
 		Password        string `json:"password"`
@@ -68,7 +68,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	// Handle the email pattern
+	// Check the email pattern
 	isEmail, err := h.emailRegExp.MatchString(req.Email)
 	if err != nil {
 		ctx.String(http.StatusOK, "Email input failed\n")
@@ -77,7 +77,8 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "Email pattern is wrong\n")
 		return
 	}
-	// Handle the keyword pattern
+
+	// Check the keyword pattern
 	isPassword, err := h.passwordRegex.MatchString(req.Password)
 	if err != nil {
 		ctx.String(http.StatusOK, "Password input failed\n")
@@ -87,11 +88,13 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	// real signup
+	// Sign up
 	err = h.svc.Signup(ctx, domain.User{
 		Email:    req.Email,
 		Password: req.Password,
 	})
+
+	// Check the error
 	switch err {
 	case nil:
 		// Success:Return the string to browser
@@ -138,6 +141,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 }
 
 func (h *UserHandler) LoginJWT(ctx *gin.Context) {
+	// Define the request struct
 	type SignupReq struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -149,9 +153,15 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 		return
 	}
 
+	// Login
 	u, err := h.svc.Login(ctx, req.Email, req.Password)
+
+	// Check the error
 	switch err {
+
+	// OK
 	case nil:
+		// Genaerate userclaims
 		uc := UserClaims{
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(constants.JwtExpireTime)),
@@ -159,17 +169,24 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 			Uid:       u.Id,
 			UserAgent: ctx.GetHeader("User-Agent"),
 		}
+
+		// Generate token
 		token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
 		tokenStr, err := token.SignedString(SigKey)
 		if err != nil {
 			ctx.String(http.StatusOK, "System Error!!")
 			return
 		}
-		ctx.Header("x-jwt-token", tokenStr)
 
+		// Set the token to the header
+		ctx.Header("x-jwt-token", tokenStr)
 		ctx.String(http.StatusOK, "Login Success!!")
+
+	// Error password or user not found
 	case service.ErrInvalidUserOrPassword:
 		ctx.String(http.StatusOK, "User not found or password is wrong")
+
+	// Other error
 	default:
 		ctx.String(http.StatusOK, "System Error!!")
 	}

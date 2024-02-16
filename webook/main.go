@@ -23,7 +23,6 @@ import (
 
 func main() {
 	// Init Server and Database
-	//gin.SetMode(gin.DebugMode)
 	initConfig()
 	server := initServer()
 	db := initDB()
@@ -40,16 +39,19 @@ func main() {
 
 func initServer() *gin.Engine {
 	server := gin.Default()
+
 	handlecors(server)
-	//handleSessions(server)
 	handlejwt(server)
 	handleRatelimit(server)
+
 	return server
 }
 
 func initDB() *gorm.DB {
-	// Connect Database
+	// Get DSN From Viper
 	dsn := viper.GetString("mysql.dsn")
+
+	// Connect to Database
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -69,6 +71,7 @@ func initUserHandler(db *gorm.DB, server *gin.Engine) {
 	ur := repository.NewUserRepository(ud)
 	us := service.NewUserService(ur)
 	hdl := web.NewUserHandler(us)
+
 	// RegisterRoutes
 	hdl.RegisterRoutes(server)
 }
@@ -92,11 +95,11 @@ func initConfig() {
 		panic(err)
 	}
 
+	// Watch Config
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		println("Config file changed:",
 			e.Name, e.Op)
 	})
-
 	viper.WatchConfig()
 }
 
@@ -119,14 +122,22 @@ func handlecors(server *gin.Engine) {
 }
 
 func handlejwt(server *gin.Engine) {
+	// Get Builder
 	login := middleware.LoginJWTMiddlewareBuilder{}
+
+	// Use Middleware
 	server.Use(login.CheckLogin())
 }
 
 func handleRatelimit(server *gin.Engine) {
+	// Get Redis Addr From Viper
 	redisaddr := viper.GetString("redis.addr")
+
+	// Init Redis
 	redisDB := redis.NewClient(&redis.Options{
 		Addr: redisaddr,
 	})
+
+	// Use Ratelimit Middleware
 	server.Use(ratelimit.NewBuilder(redisDB, constants.RateLimitInterval, constants.RateLimitRate).Build())
 }
