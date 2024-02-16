@@ -11,4 +11,5 @@ var (
 	MaxCorsAge           = 12 * time.Hour
 	JwtExpireTime        = 30 * time.Minute
 	CheckLoginExpireTime = 30 * time.Minute
+	UserCacheExpireTime  = 15 * time.Minute
 )

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"webook/webook/constants"
 	"webook/webook/internal/repository"
+	"webook/webook/internal/repository/cache"
 	"webook/webook/internal/repository/dao"
 	"webook/webook/internal/service"
 	"webook/webook/internal/web"
@@ -22,13 +23,15 @@ import (
 //none
 
 func main() {
-	// Init Server and Database
 	initConfig()
 	server := initServer()
-	db := initDB()
-
+	// Init Database
+	mysqldb := initMysql()
+	redisdb := initRedis()
+	// Init Middleware
+	initMiddleware(server, redisdb)
 	// Init UserHandler
-	initUserHandler(db, server)
+	initUserHandler(redisdb, mysqldb, server)
 
 	// Run Server
 	err := server.Run(":8080")
@@ -38,16 +41,10 @@ func main() {
 }
 
 func initServer() *gin.Engine {
-	server := gin.Default()
-
-	handlecors(server)
-	handlejwt(server)
-	handleRatelimit(server)
-
-	return server
+	return gin.Default()
 }
 
-func initDB() *gorm.DB {
+func initMysql() *gorm.DB {
 	// Get DSN From Viper
 	dsn := viper.GetString("mysql.dsn")
 
@@ -66,14 +63,35 @@ func initDB() *gorm.DB {
 	return db
 }
 
-func initUserHandler(db *gorm.DB, server *gin.Engine) {
-	ud := dao.NewUserDAO(db)
-	ur := repository.NewUserRepository(ud)
+func initRedis() *redis.Client {
+	// Get Redis Addr From Viper
+	redisaddr := viper.GetString("redis.addr")
+
+	// Init Redis
+	redisdb := redis.NewClient(&redis.Options{
+		Addr: redisaddr,
+	})
+
+	return redisdb
+}
+
+func initUserHandler(redisdb *redis.Client, mysqldb *gorm.DB, server *gin.Engine) {
+	ud := dao.NewUserDAO(mysqldb)
+	uc := cache.NewUserCache(redisdb)
+	ur := repository.NewUserRepository(ud, uc)
 	us := service.NewUserService(ur)
 	hdl := web.NewUserHandler(us)
 
-	// RegisterRoutes
+	// Register Routes
 	hdl.RegisterRoutes(server)
+}
+
+func initMiddleware(server *gin.Engine, redisdb *redis.Client) {
+
+	// Use Middlewares
+	useCors(server)
+	useCheckLogin(server)
+	useRateLimit(server, redisdb)
 }
 
 func initConfig() {
@@ -104,7 +122,7 @@ func initConfig() {
 }
 
 // Middle Were Handler
-func handlecors(server *gin.Engine) {
+func useCors(server *gin.Engine) {
 	server.Use(cors.New(cors.Config{
 		//AllowAllOrigins: true,
 		AllowOrigins: []string{"http://localhost:30001",
@@ -121,7 +139,7 @@ func handlecors(server *gin.Engine) {
 	}))
 }
 
-func handlejwt(server *gin.Engine) {
+func useCheckLogin(server *gin.Engine) {
 	// Get Builder
 	login := middleware.LoginJWTMiddlewareBuilder{}
 
@@ -129,14 +147,7 @@ func handlejwt(server *gin.Engine) {
 	server.Use(login.CheckLogin())
 }
 
-func handleRatelimit(server *gin.Engine) {
-	// Get Redis Addr From Viper
-	redisaddr := viper.GetString("redis.addr")
-
-	// Init Redis
-	redisDB := redis.NewClient(&redis.Options{
-		Addr: redisaddr,
-	})
+func useRateLimit(server *gin.Engine, redisDB *redis.Client) {
 
 	// Use Ratelimit Middleware
 	server.Use(ratelimit.NewBuilder(redisDB, constants.RateLimitInterval, constants.RateLimitRate).Build())

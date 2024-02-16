@@ -2,22 +2,28 @@ package repository
 
 import (
 	"context"
+	"github.com/redis/go-redis/v9"
+	"log"
 	"webook/webook/internal/domain"
+	"webook/webook/internal/repository/cache"
 	"webook/webook/internal/repository/dao"
 )
 
 var (
 	ErrDuplicateEmail = dao.ErrDuplicateEmail
 	ErrUserNotFound   = dao.ErrRecordNotFound
+	ErrKeyNotExist    = redis.Nil
 )
 
 type UserRepository struct {
-	dao *dao.UserDAO
+	dao   *dao.UserDAO
+	cache *cache.UserCache
 }
 
-func NewUserRepository(dao *dao.UserDAO) *UserRepository {
+func NewUserRepository(dao *dao.UserDAO, cache *cache.UserCache) *UserRepository {
 	return &UserRepository{
-		dao: dao,
+		dao:   dao,
+		cache: cache,
 	}
 }
 
@@ -38,11 +44,29 @@ func (repo *UserRepository) EditProfile(ctx context.Context, u domain.User) erro
 }
 
 func (repo *UserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
-	u, err := repo.dao.FindByID(ctx, id)
-	if err != nil {
+	// Find id from cache
+	cu, err := repo.cache.Get(ctx, id)
+	switch err {
+	case nil:
+		return cu, nil
+	case ErrKeyNotExist:
+		// Find id from dao
+		u, err := repo.dao.FindByID(ctx, id)
+		if err != nil {
+			return domain.User{}, err
+		}
+		du := repo.toDomain(u)
+
+		// Set cache
+		err = repo.cache.Set(ctx, du)
+		if err != nil {
+			log.Println(err)
+		}
+
+		return du, nil
+	default:
 		return domain.User{}, err
 	}
-	return repo.toDomain(u), nil
 }
 
 func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
