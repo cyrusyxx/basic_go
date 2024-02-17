@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
+	"strings"
 	"time"
 	"webook/webook/constants"
 	"webook/webook/internal/domain"
@@ -161,7 +162,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 
 	// OK
 	case nil:
-		// Genaerate userclaims
+		// Generate UserClaims
 		uc := UserClaims{
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(constants.JwtExpireTime)),
@@ -194,7 +195,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "hello form edit")
+	ctx.String(http.StatusOK, "Hello form edit\n")
 	type EditReq struct {
 		NickName    string `json:"nickname"`
 		Birthday    string `json:"birthday"`
@@ -202,44 +203,91 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 	var req EditReq
 
-	sess := sessions.Default(ctx)
-	uid := sess.Get("userId").(int64)
+	//sess := sessions.Default(ctx)
+	//uid := sess.Get("userId").(int64)
 	//ctx.String(http.StatusOK, "uid is %d", uid)
 
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
 
+	// Verify the length of the input
 	if len(req.NickName) > 8 {
-		// 处理校验错误
 		ctx.String(http.StatusOK, "Invalid nickname length")
 		return
 	}
-
 	if len(req.Birthday) != 10 {
-		// 处理校验错误
 		ctx.String(http.StatusOK, "Invalid birthday length")
 		return
 	}
-
 	if len(req.Description) > 50 {
-		// 处理校验错误
 		ctx.String(http.StatusOK, "Invalid description length")
 		return
 	}
 
-	err := h.svc.Edit(ctx, uid, req.NickName, req.Birthday, req.Description)
+	// Get the token from the header
+	tokenstr := ctx.GetHeader("Authorization")
+	segs := strings.Split(tokenstr, " ")
+	if len(segs) != 2 {
+		ctx.String(http.StatusOK, "Token is invalid\n")
+		return
+	}
+	tokenstr = segs[1]
+	token, err := jwt.ParseWithClaims(tokenstr, &UserClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			return SigKey, nil
+		})
+	if err != nil {
+		ctx.String(http.StatusOK, "%s", err)
+		return
+	}
+
+	// Get the user id from the token
+	uc, ok := token.Claims.(*UserClaims)
+	if !ok || !token.Valid {
+		ctx.String(http.StatusOK, "Token is invalid\n")
+		return
+	}
+
+	// Edit the user profile
+	uid := uc.Uid
+	err = h.svc.Edit(ctx, uid, req.NickName, req.Birthday, req.Description)
 	if err != nil {
 		return
 	}
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "hello form profile\n")
+	ctx.String(http.StatusOK, "Hello form profile/n")
 
-	sess := sessions.Default(ctx)
-	uid := sess.Get("userId").(int64)
+	//sess := sessions.Default(ctx)
+	//uid := sess.Get("userId").(int64)
 
+	// Get the user id from the token
+	tokenstr := ctx.GetHeader("Authorization")
+	segs := strings.Split(tokenstr, " ")
+	if len(segs) != 2 {
+		ctx.String(http.StatusOK, "Token is invalid\n")
+		return
+	}
+	tokenstr = segs[1]
+	token, err := jwt.ParseWithClaims(tokenstr, &UserClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			return SigKey, nil
+		})
+	if err != nil {
+		ctx.String(http.StatusOK, "%s", err)
+		return
+	}
+
+	// Get the user id from the token
+	uc, ok := token.Claims.(*UserClaims)
+	if !ok || !token.Valid {
+		ctx.String(http.StatusOK, "Token is invalid\n")
+		return
+	}
+
+	uid := uc.Uid
 	u, err := h.svc.Profile(ctx, uid)
 	if err != nil {
 		return
