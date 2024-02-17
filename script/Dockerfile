@@ -16,4 +16,4 @@ WORKDIR /app
 
 COPY --from=buildstage /go/src/basic_go/main /app/
 
-ENTRYPOINT ./main
+ENTRYPOINT ["./main"]

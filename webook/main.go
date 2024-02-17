@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -102,6 +103,7 @@ func initConfig() {
 
 	// Init Viper
 	viper.SetConfigFile(filepath.FromSlash(*configfile))
+	fmt.Println("Config File:", *configfile)
 	err := viper.ReadInConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
