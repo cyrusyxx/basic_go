@@ -15,6 +15,7 @@ spec:
       containers:
         - name: webook
           image: cyrusyxx/webook:test
+          imagePullPolicy: Always
           args: ["--config", "/config/config.yaml"]
           ports:
             - containerPort: 8080
