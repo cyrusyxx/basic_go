@@ -8,12 +8,13 @@ require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/sessions v0.0.5
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.857
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.857
 	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.17.0
