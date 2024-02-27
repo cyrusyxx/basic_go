@@ -16,6 +16,8 @@ import (
 	"webook/webook/internal/repository/cache"
 	"webook/webook/internal/repository/dao"
 	"webook/webook/internal/service"
+	"webook/webook/internal/service/sms"
+	"webook/webook/internal/service/sms/localsms"
 	"webook/webook/internal/web"
 	"webook/webook/internal/web/middleware"
 	"webook/webook/pkg/ginx/middleware/ratelimit"
@@ -84,7 +86,8 @@ func initUserHandler(redisdb *redis.Client, mysqldb *gorm.DB, server *gin.Engine
 
 	cc := cache.NewCodeCache(redisdb)
 	cr := repository.NewCodeRepository(cc)
-	cs := service.NewCodeService(cr, nil)
+	var ls sms.Service = localsms.NewService()
+	cs := service.NewCodeService(cr, ls)
 
 	hdl := web.NewUserHandler(us, cs)
 

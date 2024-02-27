@@ -15,10 +15,10 @@ var (
 
 type CodeService struct {
 	repo *repository.CodeRepository
-	sms  *sms.Service
+	sms  sms.Service
 }
 
-func NewCodeService(repo *repository.CodeRepository, sms *sms.Service) *CodeService {
+func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeService {
 	return &CodeService{
 		repo: repo,
 		sms:  sms,

@@ -107,7 +107,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	case nil:
 		// Success:Return the string to browser
 		ctx.String(http.StatusOK, "HELLO ITS IN SIGNUP")
-	case service.ErrDuplicateEmail:
+	case service.ErrDuplicateUser:
 		ctx.String(http.StatusOK, "Email Duplicate !!")
 	default:
 		ctx.String(http.StatusOK, "System Error !!")
@@ -303,24 +303,25 @@ func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
 			Code: 4,
 			Msg:  "Please input phone number",
 		})
+		return
 	}
 
 	err := h.codesvc.Send(ctx, bizlogin, req.Phone)
 	switch err {
 	case nil:
 		ctx.JSON(http.StatusOK, Result{
-			Msg:  "Send SMS code success",
-		}
+			Msg: "Send SMS code success",
+		})
 	case service.ErrCodeSendTooFast:
 		ctx.JSON(http.StatusOK, Result{
 			Code: 4,
 			Msg:  "Send SMS code too fast",
-		}
+		})
 	default:
 		ctx.JSON(http.StatusOK, Result{
 			Code: 5,
 			Msg:  "Send SMS code failed",
-		}
+		})
 	}
 }
 
@@ -334,7 +335,7 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 		return
 	}
 
-	ok , err := h.codesvc.Verify(ctx, bizlogin, req.Phone, req.Code)
+	ok, err := h.codesvc.Verify(ctx, bizlogin, req.Phone, req.Code)
 	if err != nil {
 		ctx.JSON(http.StatusOK, Result{
 			Code: 5,
@@ -359,11 +360,11 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 	}
 	h.setJWTToken(ctx, u.Id)
 	ctx.JSON(http.StatusOK, Result{
-		Msg:  "Login success",
+		Msg: "Login success",
 	})
 }
 
-func (h *UserHandler) setJWTToken(ctx *gin.Context, uid int64 ) {
+func (h *UserHandler) setJWTToken(ctx *gin.Context, uid int64) {
 	uc := UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(constants.JwtExpireTime)),
