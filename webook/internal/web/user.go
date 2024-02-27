@@ -19,6 +19,7 @@ const (
 	emailRegexPattern = `\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*`
 	//emailRegexPattern    = `^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$`
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,70}$`
+	bizlogin             = "login"
 )
 
 var SigKey = []byte("ukRIDSD0JpWD5Qv0P46Y8IGLjB2uvShj")
@@ -28,6 +29,7 @@ type UserHandler struct {
 	emailRegExp   *regexp.Regexp
 	passwordRegex *regexp.Regexp
 	svc           *service.UserService
+	codesvc       *service.CodeService
 }
 
 type UserClaims struct {
@@ -36,11 +38,12 @@ type UserClaims struct {
 	UserAgent string
 }
 
-func NewUserHandler(svc *service.UserService) *UserHandler {
+func NewUserHandler(svc *service.UserService, codesvc *service.CodeService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:   regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegex: regexp.MustCompile(passwordRegexPattern, regexp.None),
 		svc:           svc,
+		codesvc:       codesvc,
 	}
 }
 
@@ -52,6 +55,10 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	ug.POST("/login", h.LoginJWT)
 	ug.POST("/edit", h.Edit)
 	ug.GET("/profile", h.Profile)
+
+	// phone code
+	ug.POST("/login_sms/code/send", h.SendSMSLoginCode)
+	ug.POST("/login_sms/code/verify", h.VerifySMSLoginCode)
 }
 
 // SignUp Sign up
@@ -162,25 +169,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 
 	// OK
 	case nil:
-		// Generate UserClaims
-		uc := UserClaims{
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(constants.JwtExpireTime)),
-			},
-			Uid:       u.Id,
-			UserAgent: ctx.GetHeader("User-Agent"),
-		}
-
-		// Generate token
-		token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
-		tokenStr, err := token.SignedString(SigKey)
-		if err != nil {
-			ctx.String(http.StatusOK, "System Error!!")
-			return
-		}
-
-		// Set the token to the header
-		ctx.Header("x-jwt-token", tokenStr)
+		h.setJWTToken(ctx, u.Id)
 		ctx.String(http.StatusOK, "Login Success!!")
 
 	// Error password or user not found
@@ -298,4 +287,99 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 
 	// 返回用户信息
 	ctx.String(http.StatusOK, response)
+}
+
+func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
+	type Req struct {
+		Phone string `json:"phone"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	if req.Phone == "" {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Please input phone number",
+		})
+	}
+
+	err := h.codesvc.Send(ctx, bizlogin, req.Phone)
+	switch err {
+	case nil:
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "Send SMS code success",
+		}
+	case service.ErrCodeSendTooFast:
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Send SMS code too fast",
+		}
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "Send SMS code failed",
+		}
+	}
+}
+
+func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
+	type Req struct {
+		Phone string `json:"phone"`
+		Code  string `json:"code"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	ok , err := h.codesvc.Verify(ctx, bizlogin, req.Phone, req.Code)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "Verify SMS code failed",
+		})
+		return
+	}
+	if !ok {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Code is wrong, please input again",
+		})
+		return
+	}
+	u, err := h.svc.FindOrCreate(ctx, req.Phone)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System error",
+		})
+		return
+	}
+	h.setJWTToken(ctx, u.Id)
+	ctx.JSON(http.StatusOK, Result{
+		Msg:  "Login success",
+	})
+}
+
+func (h *UserHandler) setJWTToken(ctx *gin.Context, uid int64 ) {
+	uc := UserClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(constants.JwtExpireTime)),
+		},
+		Uid:       uid,
+		UserAgent: ctx.GetHeader("User-Agent"),
+	}
+
+	// Generate token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
+	tokenStr, err := token.SignedString(SigKey)
+	if err != nil {
+		ctx.String(http.StatusOK, "System Error!!")
+		return
+	}
+
+	// Set the token to the header
+	ctx.Header("x-jwt-token", tokenStr)
 }

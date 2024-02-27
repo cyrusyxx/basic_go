@@ -23,7 +23,6 @@ func NewService(client *sms.Client, appID, signame string) *Service {
 
 func (s *Service) Send(ctx context.Context, number string,
 	tplID string, args []string, numbers ...string) error {
-	//TODO implement me
 
 	request := sms.NewSendSmsRequest()
 	request.SetContext(ctx)

@@ -81,7 +81,12 @@ func initUserHandler(redisdb *redis.Client, mysqldb *gorm.DB, server *gin.Engine
 	uc := cache.NewUserCache(redisdb)
 	ur := repository.NewUserRepository(ud, uc)
 	us := service.NewUserService(ur)
-	hdl := web.NewUserHandler(us)
+
+	cc := cache.NewCodeCache(redisdb)
+	cr := repository.NewCodeRepository(cc)
+	cs := service.NewCodeService(cr, nil)
+
+	hdl := web.NewUserHandler(us, cs)
 
 	// Register Routes
 	hdl.RegisterRoutes(server)

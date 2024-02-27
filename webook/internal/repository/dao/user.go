@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
@@ -9,7 +10,7 @@ import (
 )
 
 var (
-	ErrDuplicateEmail = errors.New("邮箱冲突")
+	ErrDuplicateUser  = errors.New("user is duplicate")
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
@@ -18,9 +19,10 @@ type UserDAO struct {
 }
 
 type User struct {
-	Id       int64  `gorm:"primaryKey, autoincrement"` // There is a Bug!!!
-	Email    string `gorm:"unique"`
+	Id       int64          `gorm:"primaryKey, autoincrement"` // There is a Bug!!!
+	Email    sql.NullString `gorm:"unique"`
 	Password string
+	Phone    sql.NullString `gorm:"unique"`
 
 	NickName    string
 	Birthday    string
@@ -66,7 +68,7 @@ func (dao *UserDAO) Insert(ctx context.Context, u User) error {
 	if me, ok := err.(*mysql.MySQLError); ok {
 		const duplicateErr uint16 = 1062
 		if me.Number == duplicateErr {
-			return ErrDuplicateEmail
+			return ErrDuplicateUser
 		}
 	}
 	return err
@@ -81,5 +83,11 @@ func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error)
 func (dao *UserDAO) FindByID(ctx context.Context, id int64) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("id=?", id).First(&u).Error
+	return u, err
+}
+
+func (d *UserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
+	var u User
+	err := d.db.WithContext(ctx).Where("phone=?", phone).First(&u).Error
 	return u, err
 }

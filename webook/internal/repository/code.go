@@ -7,10 +7,15 @@ import (
 
 var (
 	ErrCodeVerifyTooFast = cache.ErrCodeVerifyTooFast
+	ErrCodeSendTooFast   = cache.ErrCodeSendTooFast
 )
 
 type CodeRepository struct {
-	cache cache.CodeCache
+	cache *cache.CodeCache
+}
+
+func NewCodeRepository(cache *cache.CodeCache) *CodeRepository {
+	return &CodeRepository{cache: cache}
 }
 
 func (c *CodeRepository) Set(ctx context.Context, biz, phone, code string) error {

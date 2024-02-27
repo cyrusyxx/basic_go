@@ -8,9 +8,21 @@ import (
 	"webook/webook/internal/service/sms"
 )
 
+var (
+	ErrCodeSendTooFast   = repository.ErrCodeSendTooFast
+	ErrCodeVerifyTooFast = repository.ErrCodeVerifyTooFast
+)
+
 type CodeService struct {
-	repo repository.CodeRepository
-	sms  sms.Service
+	repo *repository.CodeRepository
+	sms  *sms.Service
+}
+
+func NewCodeService(repo *repository.CodeRepository, sms *sms.Service) *CodeService {
+	return &CodeService{
+		repo: repo,
+		sms:  sms,
+	}
 }
 
 func (s *CodeService) Send(ctx context.Context, biz, phone string) error {

@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/repository"
 )
 
 var (
-	ErrDuplicateEmail        = repository.ErrDuplicateEmail
 	ErrInvalidUserOrPassword = errors.New("user not found or password is wrong")
 )
 
@@ -62,4 +62,30 @@ func (svc *UserService) Edit(ctx context.Context, uid int64, nickname string, bi
 
 func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {
 	return svc.repo.FindByID(ctx, id)
+}
+
+func (s *UserService) FindOrCreate(ctx *gin.Context, phone string) (domain.User, error) {
+	// Find User by Phone
+	u, err := s.repo.FindByPhone(ctx, phone)
+	if err == repository.ErrUserNotFound {
+		// TODO: Finish repo.Create
+		// Create User
+		err = s.repo.Create(ctx, domain.User{
+			Phone: phone,
+		})
+		// If user exists, return user
+		if err == repository.ErrDuplicateUser {
+			return s.repo.FindByPhone(ctx, phone)
+		}
+		// If error is not duplicate user, return error
+		if err != nil {
+			return domain.User{}, err
+		}
+		// If user not exists, return user
+		return s.repo.FindByPhone(ctx, phone)
+	}
+	if err != nil {
+		return domain.User{}, err
+	}
+	return u, nil
 }
