@@ -28,8 +28,8 @@ var SigKey = []byte("ukRIDSD0JpWD5Qv0P46Y8IGLjB2uvShj")
 type UserHandler struct {
 	emailRegExp   *regexp.Regexp
 	passwordRegex *regexp.Regexp
-	svc           *service.UserService
-	codesvc       *service.CodeService
+	svc           service.UserService
+	codesvc       service.CodeService
 }
 
 type UserClaims struct {
@@ -38,7 +38,7 @@ type UserClaims struct {
 	UserAgent string
 }
 
-func NewUserHandler(svc *service.UserService, codesvc *service.CodeService) *UserHandler {
+func NewUserHandler(svc service.UserService, codesvc service.CodeService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:   regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegex: regexp.MustCompile(passwordRegexPattern, regexp.None),

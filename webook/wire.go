@@ -17,13 +17,13 @@ func InitWebServer() *gin.Engine {
 	wire.Build(
 		ioc.InitMysql, ioc.InitRedis, ioc.InitSMSService,
 
-		dao.NewUserDAO,
+		dao.NewGORMUserDAO,
 
-		cache.NewUserCache, cache.NewCodeCache,
+		cache.NewRedisUserCache, cache.NewRedisCodeCache,
 
-		repository.NewUserRepository, repository.NewCodeRepository,
+		repository.NewCachedUserRepository, repository.NewCachedCodeRepository,
 
-		service.NewCodeService, service.NewUserService,
+		service.NewCachedCodeService, service.NewCachedUserService,
 
 		web.NewUserHandler,
 

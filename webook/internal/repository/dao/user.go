@@ -14,7 +14,15 @@ var (
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
-type UserDAO struct {
+type UserDAO interface {
+	Insert(ctx context.Context, u User) error
+	FindByEmail(ctx context.Context, email string) (User, error)
+	FindByID(ctx context.Context, id int64) (User, error)
+	FindByPhone(ctx context.Context, phone string) (User, error)
+	Edit(ctx context.Context, u User) error
+}
+
+type GORMUserDAO struct {
 	db *gorm.DB
 }
 
@@ -34,13 +42,13 @@ type User struct {
 	Utime int64
 }
 
-func NewUserDAO(db *gorm.DB) *UserDAO {
-	return &UserDAO{
+func NewGORMUserDAO(db *gorm.DB) UserDAO {
+	return &GORMUserDAO{
 		db: db,
 	}
 }
 
-func (dao UserDAO) Edit(ctx context.Context, u User) error {
+func (dao *GORMUserDAO) Edit(ctx context.Context, u User) error {
 	var fu User
 	err := dao.db.WithContext(ctx).Where("id=?", u.Id).First(&fu).Error
 	if err != nil {
@@ -59,7 +67,7 @@ func (dao UserDAO) Edit(ctx context.Context, u User) error {
 	return nil
 }
 
-func (dao *UserDAO) Insert(ctx context.Context, u User) error {
+func (dao *GORMUserDAO) Insert(ctx context.Context, u User) error {
 	now := time.Now().UnixMilli()
 	u.Ctime = now
 	u.Utime = now
@@ -74,20 +82,20 @@ func (dao *UserDAO) Insert(ctx context.Context, u User) error {
 	return err
 }
 
-func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error) {
+func (dao *GORMUserDAO) FindByEmail(ctx context.Context, email string) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("email=?", email).First(&u).Error
 	return u, err
 }
 
-func (dao *UserDAO) FindByID(ctx context.Context, id int64) (User, error) {
+func (dao *GORMUserDAO) FindByID(ctx context.Context, id int64) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("id=?", id).First(&u).Error
 	return u, err
 }
 
-func (d *UserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
+func (dao *GORMUserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
 	var u User
-	err := d.db.WithContext(ctx).Where("phone=?", phone).First(&u).Error
+	err := dao.db.WithContext(ctx).Where("phone=?", phone).First(&u).Error
 	return u, err
 }

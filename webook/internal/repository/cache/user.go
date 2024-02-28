@@ -10,23 +10,28 @@ import (
 	"webook/webook/internal/domain"
 )
 
-type UserCache struct {
+type UserCache interface {
+	Get(ctx context.Context, id int64) (domain.User, error)
+	Set(ctx context.Context, user domain.User) error
+}
+
+type ReidsUserCache struct {
 	cmd         redis.Cmdable
 	exprireTime time.Duration
 }
 
-func NewUserCache(cmd redis.Cmdable) *UserCache {
-	return &UserCache{
+func NewRedisUserCache(cmd redis.Cmdable) UserCache {
+	return &ReidsUserCache{
 		cmd:         cmd,
 		exprireTime: constants.UserCacheExpireTime,
 	}
 }
 
-func (cache *UserCache) key(uid int64) string {
+func (cache *ReidsUserCache) key(uid int64) string {
 	return fmt.Sprintf("user:info:%d", uid)
 }
 
-func (cache *UserCache) Get(ctx context.Context, id int64) (domain.User, error) {
+func (cache *ReidsUserCache) Get(ctx context.Context, id int64) (domain.User, error) {
 	// Get key of id
 	key := cache.key(id)
 
@@ -47,7 +52,7 @@ func (cache *UserCache) Get(ctx context.Context, id int64) (domain.User, error) 
 	return user, nil
 }
 
-func (cache *UserCache) Set(ctx context.Context, user domain.User) error {
+func (cache *ReidsUserCache) Set(ctx context.Context, user domain.User) error {
 	// Marshal user to data
 	data, err := json.Marshal(user)
 	if err != nil {

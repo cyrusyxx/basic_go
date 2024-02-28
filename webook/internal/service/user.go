@@ -14,17 +14,25 @@ var (
 	ErrDuplicateUser         = repository.ErrDuplicateUser
 )
 
-type UserService struct {
-	repo *repository.UserRepository
+type UserService interface {
+	Signup(ctx context.Context, u domain.User) error
+	Login(ctx context.Context, email string, password string) (domain.User, error)
+	Edit(ctx context.Context, uid int64, nickname string, birthday string, description string) error
+	Profile(ctx context.Context, id int64) (domain.User, error)
+	FindOrCreate(ctx *gin.Context, phone string) (domain.User, error)
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
-	return &UserService{
+type CachedUserService struct {
+	repo repository.UserRepository
+}
+
+func NewCachedUserService(repo repository.UserRepository) UserService {
+	return &CachedUserService{
 		repo: repo,
 	}
 }
 
-func (svc *UserService) Signup(ctx context.Context, u domain.User) error {
+func (svc *CachedUserService) Signup(ctx context.Context, u domain.User) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -33,7 +41,7 @@ func (svc *UserService) Signup(ctx context.Context, u domain.User) error {
 	return svc.repo.Create(ctx, u)
 }
 
-func (svc *UserService) Login(ctx context.Context, email string, password string) (domain.User, error) {
+func (svc *CachedUserService) Login(ctx context.Context, email string, password string) (domain.User, error) {
 	// Find User by Email
 	u, err := svc.repo.FindByEmail(ctx, email)
 	if err == repository.ErrUserNotFound {
@@ -52,7 +60,7 @@ func (svc *UserService) Login(ctx context.Context, email string, password string
 	return u, nil
 }
 
-func (svc *UserService) Edit(ctx context.Context, uid int64, nickname string, birthday string, description string) error {
+func (svc *CachedUserService) Edit(ctx context.Context, uid int64, nickname string, birthday string, description string) error {
 	return svc.repo.EditProfile(ctx, domain.User{
 		Id:          uid,
 		NickName:    nickname,
@@ -61,11 +69,11 @@ func (svc *UserService) Edit(ctx context.Context, uid int64, nickname string, bi
 	})
 }
 
-func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {
+func (svc *CachedUserService) Profile(ctx context.Context, id int64) (domain.User, error) {
 	return svc.repo.FindByID(ctx, id)
 }
 
-func (s *UserService) FindOrCreate(ctx *gin.Context, phone string) (domain.User, error) {
+func (s *CachedUserService) FindOrCreate(ctx *gin.Context, phone string) (domain.User, error) {
 	// Find User by Phone
 	u, err := s.repo.FindByPhone(ctx, phone)
 	if err == repository.ErrUserNotFound {
