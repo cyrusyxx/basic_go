@@ -95,7 +95,7 @@ service配置文件如下
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-service
+  name: mysql-service.go
 spec:
   selector:
     app: mysql
@@ -110,7 +110,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-service
+  name: redis-service.go
 spec:
   selector:
     app: redis
