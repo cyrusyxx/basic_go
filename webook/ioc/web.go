@@ -6,6 +6,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"webook/webook/constants"
 	"webook/webook/internal/web"
+	ijwt "webook/webook/internal/web/jwt"
 	"webook/webook/internal/web/middleware"
 	"webook/webook/pkg/ginx/middleware/ratelimit"
 	"webook/webook/pkg/limiter"
@@ -20,7 +21,7 @@ func InitWebServer(middlewareFuncs []gin.HandlerFunc,
 	return server
 }
 
-func InitMiddleware(redisdb redis.Cmdable) []gin.HandlerFunc {
+func InitMiddleware(redisdb redis.Cmdable, hdl ijwt.Handler) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		// Use Middlewares
 		cors.New(cors.Config{
@@ -37,7 +38,7 @@ func InitMiddleware(redisdb redis.Cmdable) []gin.HandlerFunc {
 			//},
 			MaxAge: constants.MaxCorsAge,
 		}),
-		middleware.LoginJWTMiddlewareBuilder{}.CheckLogin(),
+		middleware.NewLoginJWTMiddlewareBuilder(hdl).CheckLogin(),
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(
 			redisdb, constants.RateLimitInterval, constants.RateLimitRate,
 		)).Build(),

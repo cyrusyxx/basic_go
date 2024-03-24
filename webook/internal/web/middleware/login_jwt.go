@@ -4,13 +4,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
-	"webook/webook/internal/web"
+	ijwt "webook/webook/internal/web/jwt"
 )
 
 type LoginJWTMiddlewareBuilder struct {
+	ijwt.Handler
 }
 
-func (m LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
+func NewLoginJWTMiddlewareBuilder(hdl ijwt.Handler) *LoginJWTMiddlewareBuilder {
+	return &LoginJWTMiddlewareBuilder{
+		Handler: hdl,
+	}
+}
+
+func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Skip login check for signup and login
 		path := ctx.Request.URL.Path
@@ -24,13 +31,13 @@ func (m LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		}
 
 		// Get token
-		tokenStr := web.ExtractToken(ctx)
-		var uc web.UserClaims
+		tokenStr := m.ExtractToken(ctx)
+		var uc ijwt.UserClaims
 
 		// Parse token
 		token, err := jwt.ParseWithClaims(tokenStr, &uc,
 			func(token *jwt.Token) (interface{}, error) {
-				return web.SigKey, nil
+				return ijwt.SigKey, nil
 			})
 
 		// Check if token is valid
@@ -43,6 +50,13 @@ func (m LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 		if uc.UserAgent != ctx.GetHeader("User-Agent") {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Check ssid
+		err = m.CheckSession(ctx, uc.Ssid)
+		if err != nil {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}

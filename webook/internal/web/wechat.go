@@ -5,18 +5,21 @@ import (
 	"net/http"
 	"webook/webook/internal/service"
 	"webook/webook/internal/service/oauth2/wechat"
+	ijwt "webook/webook/internal/web/jwt"
 )
 
 type OAuth2WechatHandler struct {
 	svc     wechat.Service
 	usersvc service.UserService
-	jwtHandler
+	ijwt.Handler
 }
 
-func NewOAuth2WechatHandler(svc wechat.Service, usersvc service.UserService) *OAuth2WechatHandler {
+func NewOAuth2WechatHandler(svc wechat.Service,
+	usersvc service.UserService, jwthdl ijwt.Handler) *OAuth2WechatHandler {
 	return &OAuth2WechatHandler{
 		svc:     svc,
 		usersvc: usersvc,
+		Handler: jwthdl,
 	}
 }
 
@@ -62,7 +65,7 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 		})
 		return
 	}
-	o.setJWTToken(ctx, u.Id)
+	o.SetJWTToken(ctx, u.Id)
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "Login success",
 	})

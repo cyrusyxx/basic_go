@@ -10,6 +10,7 @@ import (
 	"strings"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/service"
+	ijwt "webook/webook/internal/web/jwt"
 )
 
 // Email and password regexp pattern
@@ -26,16 +27,17 @@ type UserHandler struct {
 	passwordRegex *regexp.Regexp
 	usersvc       service.UserService
 	codesvc       service.CodeService
-	jwtHandler
+	ijwt.Handler
 }
 
-func NewUserHandler(svc service.UserService, codesvc service.CodeService) *UserHandler {
+func NewUserHandler(svc service.UserService,
+	codesvc service.CodeService, jwthdl ijwt.Handler) *UserHandler {
 	return &UserHandler{
 		emailRegExp:   regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegex: regexp.MustCompile(passwordRegexPattern, regexp.None),
 		usersvc:       svc,
 		codesvc:       codesvc,
-		jwtHandler:    newJwtHandler(),
+		Handler:       jwthdl,
 	}
 }
 
@@ -45,6 +47,7 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	ug.POST("/signup", h.SignUp)
 	//ug.POST("/login", h.Login)
 	ug.POST("/login", h.LoginJWT)
+	ug.POST("/logout", h.LogoutJWT)
 	ug.POST("/edit", h.Edit)
 	ug.GET("/profile", h.Profile)
 	ug.GET("/refresh_token", h.RefreshToken)
@@ -162,7 +165,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 
 	// OK
 	case nil:
-		h.setJWTToken(ctx, u.Id)
+		h.SetJWTToken(ctx, u.Id)
 		ctx.String(http.StatusOK, "Login Success!!")
 
 	// Error password or user not found
@@ -215,9 +218,9 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		return
 	}
 	tokenstr = segs[1]
-	token, err := jwt.ParseWithClaims(tokenstr, &UserClaims{},
+	token, err := jwt.ParseWithClaims(tokenstr, &ijwt.UserClaims{},
 		func(token *jwt.Token) (interface{}, error) {
-			return SigKey, nil
+			return ijwt.SigKey, nil
 		})
 	if err != nil {
 		ctx.String(http.StatusOK, "%s", err)
@@ -225,7 +228,7 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 
 	// Get the user id from the token
-	uc, ok := token.Claims.(*UserClaims)
+	uc, ok := token.Claims.(*ijwt.UserClaims)
 	if !ok || !token.Valid {
 		ctx.String(http.StatusOK, "Token is invalid\n")
 		return
@@ -253,9 +256,9 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 	tokenstr = segs[1]
-	token, err := jwt.ParseWithClaims(tokenstr, &UserClaims{},
+	token, err := jwt.ParseWithClaims(tokenstr, &ijwt.UserClaims{},
 		func(token *jwt.Token) (interface{}, error) {
-			return SigKey, nil
+			return ijwt.SigKey, nil
 		})
 	if err != nil {
 		ctx.String(http.StatusOK, "%s", err)
@@ -263,7 +266,7 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	}
 
 	// Get the user id from the token
-	uc, ok := token.Claims.(*UserClaims)
+	uc, ok := token.Claims.(*ijwt.UserClaims)
 	if !ok || !token.Valid {
 		ctx.String(http.StatusOK, "Token is invalid\n")
 		return
@@ -351,18 +354,18 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 		})
 		return
 	}
-	h.setJWTToken(ctx, u.Id)
+	h.SetJWTToken(ctx, u.Id)
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "Login success",
 	})
 }
 
 func (h *UserHandler) RefreshToken(ctx *gin.Context) {
-	tokenStr := ExtractToken(ctx)
-	var rc RefreshClaims
+	tokenStr := h.ExtractToken(ctx)
+	var rc ijwt.RefreshClaims
 	token, err := jwt.ParseWithClaims(tokenStr, &rc,
 		func(token *jwt.Token) (interface{}, error) {
-			return RefreshSigKey, nil
+			return ijwt.RefreshSigKey, nil
 		})
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
@@ -372,8 +375,27 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	h.setJWTToken(ctx, rc.Uid)
+	// Check ssid
+	err = h.CheckSession(ctx, rc.Ssid)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	h.SetJWTToken(ctx, rc.Uid)
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "Refresh token success",
 	})
+}
+
+func (h *UserHandler) LogoutJWT(ctx *gin.Context) {
+	err := h.ClearToken(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System error",
+		})
+		return
+	}
+	ctx.String(http.StatusOK, "Logout success")
 }

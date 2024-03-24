@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 	"net/url"
 	"webook/webook/internal/domain"
@@ -45,7 +46,7 @@ func (w *WechatService) AuthUrl(ctx context.Context) (string, error) {
 	var redirectUrl = url.PathEscape("https://cyrusss.top/oauth2/wechat/callback")
 	const authUrlPattern = `https://open.weixin.qq.com/connect/qrconnect?` +
 		`appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_login&state=%s#wechat_redirect`
-	state := "3d6be0a4035d839573b04816624a415e" // TODO state must be random
+	state := uuid.New()
 
 	return fmt.Sprintf(authUrlPattern, w.appID, redirectUrl, state), nil
 }
