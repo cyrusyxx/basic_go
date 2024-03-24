@@ -46,7 +46,7 @@ func (s *CachedCodeService) Send(ctx context.Context, biz, phone string) error {
 func (s *CachedCodeService) Verify(ctx context.Context,
 	biz, phone, code string) (bool, error) {
 	ok, err := s.repo.Verify(ctx, biz, phone, code)
-	if err == repository.ErrCodeVerifyTooFast {
+	if err == ErrCodeVerifyTooFast {
 		return false, nil
 	}
 	return ok, err

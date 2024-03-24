@@ -8,8 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"strings"
-	"time"
-	"webook/webook/constants"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/service"
 )
@@ -22,28 +20,22 @@ const (
 	bizlogin             = "login"
 )
 
-var SigKey = []byte("ukRIDSD0JpWD5Qv0P46Y8IGLjB2uvShj")
-
 // UserHandler Struct
 type UserHandler struct {
 	emailRegExp   *regexp.Regexp
 	passwordRegex *regexp.Regexp
-	svc           service.UserService
+	usersvc       service.UserService
 	codesvc       service.CodeService
-}
-
-type UserClaims struct {
-	jwt.RegisteredClaims
-	Uid       int64
-	UserAgent string
+	jwtHandler
 }
 
 func NewUserHandler(svc service.UserService, codesvc service.CodeService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:   regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegex: regexp.MustCompile(passwordRegexPattern, regexp.None),
-		svc:           svc,
+		usersvc:       svc,
 		codesvc:       codesvc,
+		jwtHandler:    newJwtHandler(),
 	}
 }
 
@@ -55,6 +47,7 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	ug.POST("/login", h.LoginJWT)
 	ug.POST("/edit", h.Edit)
 	ug.GET("/profile", h.Profile)
+	ug.GET("/refresh_token", h.RefreshToken)
 
 	// phone code
 	ug.POST("/login_sms/code/send", h.SendSMSLoginCode)
@@ -97,7 +90,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	}
 
 	// Sign up
-	err = h.svc.Signup(ctx, domain.User{
+	err = h.usersvc.Signup(ctx, domain.User{
 		Email:    req.Email,
 		Password: req.Password,
 	})
@@ -126,7 +119,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	u, err := h.svc.Login(ctx, req.Email, req.Password)
+	u, err := h.usersvc.Login(ctx, req.Email, req.Password)
 	switch err {
 	case nil:
 		sess := sessions.Default(ctx)
@@ -162,7 +155,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	}
 
 	// Login
-	u, err := h.svc.Login(ctx, req.Email, req.Password)
+	u, err := h.usersvc.Login(ctx, req.Email, req.Password)
 
 	// Check the error
 	switch err {
@@ -240,7 +233,7 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 
 	// Edit the user profile
 	uid := uc.Uid
-	err = h.svc.Edit(ctx, uid, req.NickName, req.Birthday, req.Description)
+	err = h.usersvc.Edit(ctx, uid, req.NickName, req.Birthday, req.Description)
 	if err != nil {
 		return
 	}
@@ -277,7 +270,7 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	}
 
 	uid := uc.Uid
-	u, err := h.svc.Profile(ctx, uid)
+	u, err := h.usersvc.Profile(ctx, uid)
 	if err != nil {
 		return
 	}
@@ -350,7 +343,7 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 		})
 		return
 	}
-	u, err := h.svc.FindOrCreate(ctx, req.Phone)
+	u, err := h.usersvc.FindOrCreate(ctx, req.Phone)
 	if err != nil {
 		ctx.JSON(http.StatusOK, Result{
 			Code: 5,
@@ -364,23 +357,23 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 	})
 }
 
-func (h *UserHandler) setJWTToken(ctx *gin.Context, uid int64) {
-	uc := UserClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(constants.JwtExpireTime)),
-		},
-		Uid:       uid,
-		UserAgent: ctx.GetHeader("User-Agent"),
-	}
-
-	// Generate token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
-	tokenStr, err := token.SignedString(SigKey)
+func (h *UserHandler) RefreshToken(ctx *gin.Context) {
+	tokenStr := ExtractToken(ctx)
+	var rc RefreshClaims
+	token, err := jwt.ParseWithClaims(tokenStr, &rc,
+		func(token *jwt.Token) (interface{}, error) {
+			return RefreshSigKey, nil
+		})
 	if err != nil {
-		ctx.String(http.StatusOK, "System Error!!")
+		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-
-	// Set the token to the header
-	ctx.Header("x-jwt-token", tokenStr)
+	if token == nil || !token.Valid {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	h.setJWTToken(ctx, rc.Uid)
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "Refresh token success",
+	})
 }

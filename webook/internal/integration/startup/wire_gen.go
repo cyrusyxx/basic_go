@@ -8,7 +8,7 @@ package startup
 
 import (
 	"github.com/gin-gonic/gin"
-	"webook/webook/internal/repository"
+	user3 "webook/webook/internal/repository"
 	"webook/webook/internal/repository/cache"
 	"webook/webook/internal/repository/dao"
 	"webook/webook/internal/service"
@@ -24,10 +24,10 @@ func InitWebServer() *gin.Engine {
 	db := InitMysql()
 	userDAO := dao.NewGORMUserDAO(db)
 	userCache := cache.NewRedisUserCache(cmdable)
-	userRepository := repository.NewCachedUserRepository(userDAO, userCache)
+	userRepository := user3.NewCachedUserRepository(userDAO, userCache)
 	userService := service.NewCachedUserService(userRepository)
 	codeCache := cache.NewRedisCodeCache(cmdable)
-	codeRepository := repository.NewCachedCodeRepository(codeCache)
+	codeRepository := user3.NewCachedCodeRepository(codeCache)
 	smsService := ioc.InitSMSService()
 	codeService := service.NewCachedCodeService(codeRepository, smsService)
 	userHandler := web.NewUserHandler(userService, codeService)

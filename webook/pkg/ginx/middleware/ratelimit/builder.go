@@ -29,7 +29,7 @@ func (b *Builder) Prefix(prefix string) *Builder {
 func (b *Builder) Build() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		limited, err := b.limiter.Limit(ctx,
-			fmt.Sprintf("%s:%s", b.prefix, ctx.ClientIP())
+			fmt.Sprintf("%s:%s", b.prefix, ctx.ClientIP()))
 		if err != nil {
 			log.Println(err)
 			// 这一步很有意思，就是如果这边出错了

@@ -20,6 +20,7 @@ type UserDAO interface {
 	FindByID(ctx context.Context, id int64) (User, error)
 	FindByPhone(ctx context.Context, phone string) (User, error)
 	Edit(ctx context.Context, u User) error
+	FindByWechatOpenID(ctx context.Context, openId string) (User, error)
 }
 
 type GORMUserDAO struct {
@@ -35,6 +36,9 @@ type User struct {
 	NickName    string
 	Birthday    string
 	Description string
+
+	WechatOpenId  sql.NullString `gorm:"unique"`
+	WechatUnionId sql.NullString
 
 	// Create time
 	Ctime int64
@@ -97,5 +101,13 @@ func (dao *GORMUserDAO) FindByID(ctx context.Context, id int64) (User, error) {
 func (dao *GORMUserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("phone=?", phone).First(&u).Error
+	return u, err
+}
+
+func (dao *GORMUserDAO) FindByWechatOpenID(ctx context.Context,
+	openId string) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).
+		Where("wechat_open_id=?", openId).First(&u).Error
 	return u, err
 }

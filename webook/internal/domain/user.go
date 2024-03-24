@@ -9,4 +9,6 @@ type User struct {
 	NickName    string
 	Birthday    string
 	Description string
+
+	WechatInfo
 }

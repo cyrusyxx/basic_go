@@ -3,11 +3,7 @@ package middleware
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"log"
 	"net/http"
-	"strings"
-	"time"
-	"webook/webook/constants"
 	"webook/webook/internal/web"
 )
 
@@ -21,26 +17,14 @@ func (m LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		if path == "/users/signup" ||
 			path == "/users/login" ||
 			path == "/users/login_sms/code/send" ||
-			path == "/users/login_sms/code/verify" {
-			return
-		}
-
-		// Check if token is valid
-		authStr := ctx.GetHeader("Authorization")
-		if authStr == "" {
-			ctx.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		// Check if token is valid
-		segs := strings.Split(authStr, " ")
-		if len(segs) != 2 {
-			ctx.AbortWithStatus(http.StatusUnauthorized)
+			path == "/users/login_sms/code/verify" ||
+			path == "/oauth2/wechat/callback" ||
+			path == "/oauth2/wechat/authurl" {
 			return
 		}
 
 		// Get token
-		tokenStr := segs[1]
+		tokenStr := web.ExtractToken(ctx)
 		var uc web.UserClaims
 
 		// Parse token
@@ -63,17 +47,6 @@ func (m LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
-		// Check if token is about to expire
-		expireTime := uc.ExpiresAt
-		if expireTime.Sub(time.Now()) < time.Second*50 {
-			uc.ExpiresAt = jwt.NewNumericDate(time.Now().Add(constants.CheckLoginExpireTime))
-			tokenStr, err = token.SignedString(web.SigKey)
-			ctx.Header("x-jwt-token", tokenStr)
-			if err != nil {
-				log.Println(err)
-			}
-		}
 		ctx.Set("userclaim", uc)
-
 	}
 }

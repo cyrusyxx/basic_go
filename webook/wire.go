@@ -15,19 +15,27 @@ import (
 
 func InitWebServer() *gin.Engine {
 	wire.Build(
-		ioc.InitMysql, ioc.InitRedis, ioc.InitSMSService,
+		ioc.InitMysql,
+		ioc.InitRedis,
 
 		dao.NewGORMUserDAO,
 
-		cache.NewRedisUserCache, cache.NewRedisCodeCache,
+		cache.NewRedisUserCache,
+		cache.NewRedisCodeCache,
 
-		repository.NewCachedUserRepository, repository.NewCachedCodeRepository,
+		repository.NewCachedUserRepository,
+		repository.NewCachedCodeRepository,
 
-		service.NewCachedCodeService, service.NewCachedUserService,
+		ioc.InitSMSService,
+		ioc.InitWechatService,
+		service.NewCachedCodeService,
+		service.NewCachedUserService,
 
 		web.NewUserHandler,
+		web.NewOAuth2WechatHandler,
 
-		ioc.InitWebServer, ioc.InitMiddleware,
+		ioc.InitWebServer,
+		ioc.InitMiddleware,
 	)
 
 	return gin.Default()

@@ -12,11 +12,11 @@ import (
 )
 
 func InitWebServer(middlewareFuncs []gin.HandlerFunc,
-	userHandler *web.UserHandler) *gin.Engine {
-
+	userHandler *web.UserHandler, wechatHandler *web.OAuth2WechatHandler) *gin.Engine {
 	server := gin.Default()
 	server.Use(middlewareFuncs...)
 	userHandler.RegisterRoutes(server)
+	wechatHandler.RegisterRoutes(server)
 	return server
 }
 
@@ -29,7 +29,7 @@ func InitMiddleware(redisdb redis.Cmdable) []gin.HandlerFunc {
 				"http://localhost:3000"},
 			//AllowMethods: []string{"PUT", "PATCH", "POST", "GET"},
 			AllowHeaders:  []string{"Content-Type", "Authorization"},
-			ExposeHeaders: []string{"x-jwt-token"},
+			ExposeHeaders: []string{"x-jwt-token", "x-refresh-token"},
 			//ExposeHeaders:    []string{"Content-Length"},
 			AllowCredentials: true,
 			//AllowOriginFunc: func(origin string) bool {

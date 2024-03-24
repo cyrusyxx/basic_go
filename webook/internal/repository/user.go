@@ -22,6 +22,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int64) (domain.User, error)
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
+	FindByWechatOpenID(ctx context.Context, openId string) (domain.User, error)
 }
 
 type CachedUserRepository struct {
@@ -102,11 +103,24 @@ func (repo *CachedUserRepository) toDomain(u dao.User) domain.User {
 		NickName:    u.NickName,
 		Birthday:    u.Birthday,
 		Description: u.Description,
+		WechatInfo: domain.WechatInfo{
+			OpenId:  u.WechatOpenId.String,
+			UnionId: u.WechatUnionId.String,
+		},
 	}
 }
 
 func (repo *CachedUserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
 	u, err := repo.dao.FindByPhone(ctx, phone)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.toDomain(u), nil
+}
+
+func (repo *CachedUserRepository) FindByWechatOpenID(ctx context.Context,
+	openId string) (domain.User, error) {
+	u, err := repo.dao.FindByWechatOpenID(ctx, openId)
 	if err != nil {
 		return domain.User{}, err
 	}

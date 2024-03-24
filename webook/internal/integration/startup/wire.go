@@ -5,11 +5,10 @@ package startup
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
-	"webook/webook/internal/repository"
+	user3 "webook/webook/internal/repository"
 	"webook/webook/internal/repository/cache"
 	"webook/webook/internal/repository/dao"
 	"webook/webook/internal/service"
-	"webook/webook/internal/web"
 	"webook/webook/ioc"
 )
 
@@ -21,11 +20,11 @@ func InitWebServer() *gin.Engine {
 
 		cache.NewRedisUserCache, cache.NewRedisCodeCache,
 
-		repository.NewCachedUserRepository, repository.NewCachedCodeRepository,
+		user3.NewCachedUserRepository, user3.NewCachedCodeRepository,
 
 		service.NewCachedCodeService, service.NewCachedUserService,
 
-		web.NewUserHandler,
+		user.NewUserHandler,
 
 		ioc.InitWebServer, ioc.InitMiddleware,
 	)

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/repository"
@@ -19,7 +18,8 @@ type UserService interface {
 	Login(ctx context.Context, email string, password string) (domain.User, error)
 	Edit(ctx context.Context, uid int64, nickname string, birthday string, description string) error
 	Profile(ctx context.Context, id int64) (domain.User, error)
-	FindOrCreate(ctx *gin.Context, phone string) (domain.User, error)
+	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
+	FindOrCreateByWechat(ctx context.Context, info domain.WechatInfo) (domain.User, error)
 }
 
 type CachedUserService struct {
@@ -73,28 +73,53 @@ func (svc *CachedUserService) Profile(ctx context.Context, id int64) (domain.Use
 	return svc.repo.FindByID(ctx, id)
 }
 
-func (s *CachedUserService) FindOrCreate(ctx *gin.Context, phone string) (domain.User, error) {
+func (svc *CachedUserService) FindOrCreate(ctx context.Context, phone string) (domain.User, error) {
+
 	// Find User by Phone
-	u, err := s.repo.FindByPhone(ctx, phone)
+	u, err := svc.repo.FindByPhone(ctx, phone)
 	if err == repository.ErrUserNotFound {
 		// TODO: Finish repo.Create
 		// Create User
-		err = s.repo.Create(ctx, domain.User{
+		err = svc.repo.Create(ctx, domain.User{
 			Phone: phone,
 		})
 		// If user exists, return user
 		if err == repository.ErrDuplicateUser {
-			return s.repo.FindByPhone(ctx, phone)
+			return svc.repo.FindByPhone(ctx, phone)
 		}
 		// If error is not duplicate user, return error
 		if err != nil {
 			return domain.User{}, err
 		}
 		// If user not exists, return user
-		return s.repo.FindByPhone(ctx, phone)
+		return svc.repo.FindByPhone(ctx, phone)
 	}
 	if err != nil {
 		return domain.User{}, err
 	}
 	return u, nil
+}
+
+func (svc *CachedUserService) FindOrCreateByWechat(ctx context.Context,
+	info domain.WechatInfo) (domain.User, error) {
+	// Find User by Wechat OpenID
+	u, err := svc.repo.FindByWechatOpenID(ctx, info.OpenId)
+	if err == repository.ErrUserNotFound {
+		// Create User
+		err = svc.repo.Create(ctx, domain.User{
+			WechatInfo: info,
+		})
+
+		// If user exists, return user
+		if err == repository.ErrDuplicateUser {
+			return svc.repo.FindByWechatOpenID(ctx, info.OpenId)
+		}
+		// If error is not duplicate user, return error
+		if err != nil {
+			return domain.User{}, err
+		}
+		// If user not exists, return user
+		return svc.repo.FindByWechatOpenID(ctx, info.OpenId)
+	}
+	return u, err
 }
