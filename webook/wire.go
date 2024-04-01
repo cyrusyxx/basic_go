@@ -18,6 +18,7 @@ func InitWebServer() *gin.Engine {
 	wire.Build(
 		ioc.InitMysql,
 		ioc.InitRedis,
+		ioc.InitLogger,
 
 		dao.NewGORMUserDAO,
 

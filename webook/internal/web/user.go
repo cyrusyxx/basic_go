@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"webook/webook/internal/domain"
@@ -335,8 +336,9 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusOK, Result{
 			Code: 5,
-			Msg:  "Verify SMS code failed",
+			Msg:  "System error",
 		})
+		zap.L().Error("Verify SMS code failed", zap.Error(err))
 		return
 	}
 	if !ok {

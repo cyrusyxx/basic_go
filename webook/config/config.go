@@ -35,3 +35,6 @@ func InitConfig() {
 	})
 	viper.WatchConfig()
 }
+
+// TODO maybe add a remote center of config
+// TODO in 六.8
