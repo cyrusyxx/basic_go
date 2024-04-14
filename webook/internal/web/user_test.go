@@ -11,13 +11,16 @@ import (
 	"webook/webook/internal/domain"
 	"webook/webook/internal/service"
 	svcmocks "webook/webook/internal/service/mocks"
+	"webook/webook/internal/web/jwt"
+	jwtmocks "webook/webook/internal/web/jwt/mocks"
 )
 
 func TestUserHandler_SignUp(t *testing.T) {
 	testCases := []struct {
 		name string
 
-		mock func(ctrl *gomock.Controller) (service.UserService, service.CodeService)
+		mock func(ctrl *gomock.Controller) (service.UserService,
+			service.CodeService, jwt.Handler)
 
 		reqBuilder func(t *testing.T) *http.Request
 
@@ -26,7 +29,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 	}{
 		{
 			name: "success",
-			mock: func(ctrl *gomock.Controller) (service.UserService, service.CodeService) {
+			mock: func(ctrl *gomock.Controller) (service.UserService, service.CodeService, jwt.Handler) {
 				userService := svcmocks.NewMockUserService(ctrl)
 				userService.EXPECT().Signup(gomock.Any(), domain.User{
 					Email:    "12345@qq.com",
@@ -34,8 +37,9 @@ func TestUserHandler_SignUp(t *testing.T) {
 				}).Return(nil)
 
 				codeService := svcmocks.NewMockCodeService(ctrl)
+				jwthandler := jwtmocks.NewMockHandler(ctrl)
 
-				return userService, codeService
+				return userService, codeService, jwthandler
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
 				req, err := http.NewRequest(http.MethodPost,
@@ -55,11 +59,13 @@ func TestUserHandler_SignUp(t *testing.T) {
 
 		{
 			name: "Email Pattern is wrong",
-			mock: func(ctrl *gomock.Controller) (service.UserService, service.CodeService) {
+			mock: func(ctrl *gomock.Controller) (service.UserService,
+				service.CodeService, jwt.Handler) {
 				userService := svcmocks.NewMockUserService(ctrl)
 				codeService := svcmocks.NewMockCodeService(ctrl)
+				jwthandler := jwtmocks.NewMockHandler(ctrl)
 
-				return userService, codeService
+				return userService, codeService, jwthandler
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
 				req, err := http.NewRequest(http.MethodPost,
@@ -83,8 +89,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			userService, codeService := tc.mock(ctrl)
-			hdl := NewUserHandler(userService, codeService)
+			userService, codeService, jwthandler := tc.mock(ctrl)
+			hdl := NewUserHandler(userService, codeService, jwthandler)
 
 			server := gin.Default()
 			hdl.RegisterRoutes(server)
