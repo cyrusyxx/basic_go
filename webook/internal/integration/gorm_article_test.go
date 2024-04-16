@@ -27,7 +27,7 @@ type Result[T any] struct {
 
 func TestArticleHandler_Edit(t *testing.T) {
 	mysqldb := startup.InitMysql()
-	hdl := startup.InitArticleHandler()
+	hdl := startup.InitArticleHandler(dao.NewGORMArticleDAO(mysqldb))
 	server := gin.Default()
 	server.Use(func(ctx *gin.Context) {
 		ctx.Set("userclaim", ijwt.UserClaims{
