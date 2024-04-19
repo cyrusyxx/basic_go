@@ -78,7 +78,6 @@ func (svc *CachedUserService) FindOrCreate(ctx context.Context, phone string) (d
 	// Find User by Phone
 	u, err := svc.repo.FindByPhone(ctx, phone)
 	if err == repository.ErrUserNotFound {
-		// TODO: Finish repo.Create
 		// Create User
 		err = svc.repo.Create(ctx, domain.User{
 			Phone: phone,

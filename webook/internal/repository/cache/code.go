@@ -43,7 +43,7 @@ func (c *RedisCodeCache) Set(ctx context.Context, biz, phone, code string) error
 	case 0:
 		return nil
 	case -1:
-		return errors.New("the key is exist and no expire time")
+		return errors.New("the firstKey is exist and no expire time")
 	case -2:
 		return ErrCodeSendTooFast
 	}

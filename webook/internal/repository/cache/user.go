@@ -32,7 +32,7 @@ func (cache *ReidsUserCache) key(uid int64) string {
 }
 
 func (cache *ReidsUserCache) Get(ctx context.Context, id int64) (domain.User, error) {
-	// Get key of id
+	// Get firstKey of id
 	key := cache.key(id)
 
 	// Get data from cache
