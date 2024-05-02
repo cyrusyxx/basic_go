@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,8 +13,11 @@ import (
 )
 
 type ArticleHandler struct {
-	svc service.ArticleService
+	svc      service.ArticleService
+	interSvc service.InteractiveService
+
 	l   logger.Logger
+	biz string
 }
 
 type Page struct {
@@ -22,10 +26,13 @@ type Page struct {
 }
 
 func NewArticleHandler(l logger.Logger,
-	svc service.ArticleService) *ArticleHandler {
+	svc service.ArticleService,
+	intersvc service.InteractiveService) *ArticleHandler {
 	return &ArticleHandler{
-		svc: svc,
-		l:   l,
+		svc:      svc,
+		interSvc: intersvc,
+		l:        l,
+		biz:      "article",
 	}
 }
 
@@ -39,6 +46,9 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g.POST("/list", h.List)
 
 	g.GET("/pub/:id", h.PubDetail)
+	g.POST("/pub/like", h.Like)
+
+	g.POST("/pub/collect", h.Collect)
 }
 
 func (h *ArticleHandler) Edit(ctx *gin.Context) {
@@ -187,7 +197,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, Result{
-		Data: toContentVo(arti),
+		Data: toContentVo(arti, domain.InteractiveCount{}),
 	})
 }
 
@@ -203,8 +213,26 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 		return
 	}
 
-	// Get article by id
-	arti, err := h.svc.GetPubById(ctx, id)
+	var (
+		eg    errgroup.Group
+		arti  domain.Article
+		inter domain.InteractiveCount
+	)
+
+	eg.Go(func() error {
+		var er error
+		arti, er = h.svc.GetPubById(ctx, id)
+		return er
+	})
+
+	eg.Go(func() error {
+		uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+		var er error
+		inter, er = h.interSvc.Get(ctx, h.biz, id, uc.Uid)
+		return er
+	})
+
+	err = eg.Wait()
 	if err != nil {
 		ctx.JSON(http.StatusOK, Result{
 			Code: 5,
@@ -215,24 +243,85 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 		return
 	}
 
+	// Increase view count
+	err = h.interSvc.IncreaseViewCount(ctx, h.biz, id)
+
+	// Return article
 	ctx.JSON(http.StatusOK, Result{
-		Data: toContentVo(arti),
+		Data: toContentVo(arti, inter),
 		Msg:  "OK",
 	})
 }
 
-func toAbstractVo(articles domain.Article) ArticleVo {
-	return _tovo(articles, true)
+func (h *ArticleHandler) Like(ctx *gin.Context) {
+	type Req struct {
+		Id   int64 `json:"id"`
+		Like bool  `json:"like"`
+	}
+
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+	var err error
+	if req.Like {
+		err = h.interSvc.Like(ctx, h.biz, req.Id, uc.Uid)
+	} else {
+		err = h.interSvc.CancelLike(ctx, h.biz, req.Id, uc.Uid)
+	}
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System Error",
+		})
+		h.l.Error("Failed to like article", logger.Error(err))
+		return
+	}
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "OK",
+	})
 }
 
-func toContentVo(articles domain.Article) ArticleVo {
-	return _tovo(articles, false)
+func (h *ArticleHandler) Collect(ctx *gin.Context) {
+	type Req struct {
+		Id int64 `json:"id"`
+		// Collections ID
+		Cid int64 `json:"cid"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+	err := h.interSvc.Collect(ctx, h.biz, req.Id, req.Cid, uc.Uid)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System Error",
+		})
+		h.l.Error("Failed to collect article", logger.Error(err))
+		return
+	}
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "OK",
+	})
+}
+
+func toAbstractVo(articles domain.Article) ArticleVo {
+	return _tovo(articles, domain.InteractiveCount{}, true)
+}
+
+func toContentVo(articles domain.Article, inter domain.InteractiveCount) ArticleVo {
+	return _tovo(articles, inter, false)
 }
 
 func toAbstractVos(articles []domain.Article) []ArticleVo {
 	var vos []ArticleVo
 	for _, article := range articles {
-		vos = append(vos, _tovo(article, true))
+		vos = append(vos, _tovo(article, domain.InteractiveCount{}, true))
 	}
 	return vos
 }
@@ -240,12 +329,12 @@ func toAbstractVos(articles []domain.Article) []ArticleVo {
 func toContentVos(articles []domain.Article) []ArticleVo {
 	var vos []ArticleVo
 	for _, article := range articles {
-		vos = append(vos, _tovo(article, false))
+		vos = append(vos, _tovo(article, domain.InteractiveCount{}, false))
 	}
 	return vos
 }
 
-func _tovo(article domain.Article, isAbstract bool) ArticleVo {
+func _tovo(article domain.Article, inter domain.InteractiveCount, isAbstract bool) ArticleVo {
 	vo := ArticleVo{
 		Id:         article.Id,
 		Title:      article.Title,
@@ -254,6 +343,13 @@ func _tovo(article domain.Article, isAbstract bool) ArticleVo {
 		AuthorId:   article.Author.Id,
 		AuthorName: article.Author.Name,
 		Status:     uint8(article.Status),
+
+		// interactive field
+		ViewCnt:    inter.ViewCnt,
+		LikeCnt:    inter.LikeCnt,
+		CollectCnt: inter.CollectCnt,
+		Liked:      inter.Liked,
+		Collected:  inter.Collected,
 
 		// Format time to string
 		Ctime: article.Ctime.Format(time.DateTime),

@@ -14,17 +14,27 @@ import (
 	"webook/webook/ioc"
 )
 
+var interactiveSet = wire.NewSet(
+	dao.NewGORMInteractiveDAO,
+	cache.NewRedisInteractiveCache,
+	repository.NewCachedInteractiveRepository,
+	service.NewInteractiveService,
+)
+
 func InitWebServer() *gin.Engine {
 	wire.Build(
 		ioc.InitMysql,
 		ioc.InitRedis,
 		ioc.InitLogger,
 
+		interactiveSet,
+
 		dao.NewGORMUserDAO,
 		dao.NewGORMArticleDAO,
 
 		cache.NewRedisUserCache,
 		cache.NewRedisCodeCache,
+		cache.NewRedisArticleCache,
 
 		repository.NewCachedUserRepository,
 		repository.NewCachedCodeRepository,

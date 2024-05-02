@@ -10,4 +10,10 @@ type ArticleVo struct {
 	Status     uint8  `json:"status,omitempty"`
 	Ctime      string `json:"ctime,omitempty"`
 	Utime      string `json:"utime,omitempty"`
+
+	ViewCnt    int64 `json:"view_cnt,omitempty"`
+	LikeCnt    int64 `json:"like_cnt,omitempty"`
+	CollectCnt int64 `json:"collect_cnt,omitempty"`
+	Liked      bool  `json:"liked,omitempty"`
+	Collected  bool  `json:"collected,omitempty"`
 }
