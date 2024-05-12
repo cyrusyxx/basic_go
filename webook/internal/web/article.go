@@ -191,8 +191,8 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 			Code: 5,
 		})
 		h.l.Error("invalid article id",
-			logger.Int64(id),
-			logger.Int64(uc.Uid))
+			logger.Int64("id", id),
+			logger.Int64("uid", uc.Uid))
 		return
 	}
 
@@ -219,14 +219,15 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 		inter domain.InteractiveCount
 	)
 
+	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+
 	eg.Go(func() error {
 		var er error
-		arti, er = h.svc.GetPubById(ctx, id)
+		arti, er = h.svc.GetPubById(ctx, uc.Uid, id)
 		return er
 	})
 
 	eg.Go(func() error {
-		uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
 		var er error
 		inter, er = h.interSvc.Get(ctx, h.biz, id, uc.Uid)
 		return er

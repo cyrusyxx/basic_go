@@ -9,6 +9,7 @@ import (
 
 type InteractiveDAO interface {
 	IncreaseViewCount(ctx context.Context, biz string, bizId int64) error
+	IncreaseViewCountBatch(ctx context.Context, bizs []string, ids []int64) error
 	InsertLikeInfo(ctx context.Context, biz string, id int64, uid int64) error
 	DeleteLikeInfo(ctx context.Context, biz string, id int64, uid int64) error
 	InsertCollectionBiz(ctx context.Context, biz string, id int64, cid int64, uid int64) error
@@ -38,7 +39,7 @@ type UserLikeBiz struct {
 	BizId int64  `gorm:"uniqueIndex:biz_type_id"`
 	Biz   string `gorm:"type:varchar(128);uniqueIndex:biz_type_id"`
 
-	status int64
+	Status int64
 
 	Ctime int64
 	Utime int64
@@ -82,7 +83,22 @@ func (d *GORMInteractiveDAO) IncreaseViewCount(ctx context.Context,
 	}).Error
 }
 
-func (d *GORMInteractiveDAO) InsertLikeInfo(ctx context.Context, biz string, id int64, uid int64) error {
+func (d *GORMInteractiveDAO) IncreaseViewCountBatch(ctx context.Context,
+	bizs []string, ids []int64) error {
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txDAO := NewGORMInteractiveDAO(tx)
+		for i := range bizs {
+			err := txDAO.IncreaseViewCount(ctx, bizs[i], ids[i])
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (d *GORMInteractiveDAO) InsertLikeInfo(ctx context.Context,
+	biz string, id int64, uid int64) error {
 	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		now := time.Now().UnixMilli()
 		err := tx.Clauses(clause.OnConflict{
@@ -94,7 +110,7 @@ func (d *GORMInteractiveDAO) InsertLikeInfo(ctx context.Context, biz string, id 
 			Uid:    uid,
 			BizId:  id,
 			Biz:    biz,
-			status: 1,
+			Status: 1,
 			Utime:  now,
 			Ctime:  now,
 		}).Error

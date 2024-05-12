@@ -13,7 +13,7 @@ type Article struct {
 	Title    string `gorm:"type=varchar(4096)" bson:"title,omitempty"`
 	Content  string `gorm:"type=BLOB" bson:"content,omitempty"`
 	AuthorId int64  `gorm:"index" bson:"author_id,omitempty"`
-	States   uint8  `bson:"states,omitempty"`
+	Status   uint8  `bson:"status,omitempty"`
 
 	Ctime int64 `bson:"ctime,omitempty"`
 	Utime int64 `bson:"utime,omitempty"`
@@ -57,7 +57,7 @@ func (d *GORMArticleDAO) UpdateById(ctx context.Context, arti Article) error {
 			"title":   arti.Title,
 			"content": arti.Content,
 			"utime":   now,
-			"status":  arti.States})
+			"status":  arti.Status})
 	if res.Error != nil {
 		return res.Error
 	}
@@ -98,7 +98,7 @@ func (d *GORMArticleDAO) Sync(ctx context.Context, arti Article) (int64, error) 
 			"title":   pubArti.Title,
 			"content": pubArti.Content,
 			"utime":   time.Now().UnixMilli(),
-			"status":  pubArti.States,
+			"status":  pubArti.Status,
 		}),
 	}).Create(pubArti).Error
 	if err != nil {

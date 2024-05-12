@@ -23,7 +23,8 @@ type AccessLog struct {
 	Duration time.Duration `json:"duration"`
 }
 
-func NewLogMiddlewareBuilder(logFn func(ctx context.Context, al AccessLog)) *LogMiddlewareBuilder {
+func NewLogMiddlewareBuilder(logFn func(ctx context.Context,
+	al AccessLog)) *LogMiddlewareBuilder {
 	return &LogMiddlewareBuilder{
 		logFn: logFn,
 	}

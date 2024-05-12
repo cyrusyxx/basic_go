@@ -52,7 +52,7 @@ func (d *MongoDBArticleDAO) UpdateById(ctx context.Context,
 			"title":   arti.Title,
 			"content": arti.Content,
 			"utime":   time.Now().UnixMilli(),
-			"status":  arti.States},
+			"status":  arti.Status},
 		},
 	}
 	res, err := d.col.UpdateOne(ctx, filter, set)

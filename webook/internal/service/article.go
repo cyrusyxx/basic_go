@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"webook/webook/internal/domain"
+	"webook/webook/internal/events/article"
 	"webook/webook/internal/repository"
+	"webook/webook/pkg/logger"
 )
 
 type ArticleService interface {
@@ -12,16 +14,22 @@ type ArticleService interface {
 	Withdraw(ctx context.Context, uid int64, id int64) error
 	GetByAuthor(ctx context.Context, uid int64, offset int64, limit int64) ([]domain.Article, error)
 	GetById(ctx context.Context, id int64) (domain.Article, error)
-	GetPubById(ctx context.Context, id int64) (domain.Article, error)
+	GetPubById(ctx context.Context, uid, id int64) (domain.Article, error)
 }
 
 type ImplArticleService struct {
-	repo repository.ArticleRepository
+	repo     repository.ArticleRepository
+	producer article.Producer
+
+	l logger.Logger
 }
 
-func NewImplArticleService(repo repository.ArticleRepository) ArticleService {
+func NewImplArticleService(repo repository.ArticleRepository,
+	producer article.Producer, l logger.Logger) ArticleService {
 	return &ImplArticleService{
-		repo: repo,
+		repo:     repo,
+		producer: producer,
+		l:        l,
 	}
 }
 
@@ -56,6 +64,20 @@ func (s *ImplArticleService) GetById(ctx context.Context, id int64) (domain.Arti
 }
 
 func (s *ImplArticleService) GetPubById(ctx context.Context,
-	id int64) (domain.Article, error) {
-	return s.repo.GetPubById(ctx, id)
+	uid, id int64) (domain.Article, error) {
+	res, err := s.repo.GetPubById(ctx, id)
+
+	go func() {
+		if err == nil {
+			er := s.producer.ProducerReadEvent(article.ReadEvent{
+				Aid: id,
+				Uid: uid,
+			})
+			if er != nil {
+				s.l.Error("Failed to produce read event", logger.Error(er))
+			}
+		}
+	}()
+
+	return res, err
 }

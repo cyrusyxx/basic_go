@@ -3,8 +3,8 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	"webook/webook/internal/events/article"
 	"webook/webook/internal/repository"
 	"webook/webook/internal/repository/cache"
 	"webook/webook/internal/repository/dao"
@@ -21,13 +21,19 @@ var interactiveSet = wire.NewSet(
 	service.NewInteractiveService,
 )
 
-func InitWebServer() *gin.Engine {
+func InitWebServer() *App {
 	wire.Build(
 		ioc.InitMysql,
 		ioc.InitRedis,
 		ioc.InitLogger,
+		ioc.InitSaramaClient,
+		ioc.InitSyncProducer,
+		ioc.InitConsumers,
 
 		interactiveSet,
+
+		article.NewSaramaSyncProducer,
+		article.NewInteractiveReadEventConsumer,
 
 		dao.NewGORMUserDAO,
 		dao.NewGORMArticleDAO,
@@ -53,7 +59,9 @@ func InitWebServer() *gin.Engine {
 
 		ioc.InitWebServer,
 		ioc.InitMiddleware,
+
+		wire.Struct(new(App), "*"),
 	)
 
-	return gin.Default()
+	return new(App)
 }

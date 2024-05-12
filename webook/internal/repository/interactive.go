@@ -10,6 +10,7 @@ import (
 
 type InteractiveRepository interface {
 	IncreaseViewCount(ctx context.Context, biz string, bizId int64) error
+	IncreaseViewCountBatch(ctx context.Context, bizs []string, bizIds []int64) error
 	IncreaseLike(ctx context.Context, biz string, id int64, uid int64) error
 	DecreaseLike(ctx context.Context, biz string, id int64, uid int64) error
 	AddCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
@@ -42,6 +43,27 @@ func (r *CachedInteractiveRepository) IncreaseViewCount(ctx context.Context,
 	return r.cache.IncreaseViewCountIfPresent(ctx, biz, bizId)
 }
 
+func (r *CachedInteractiveRepository) IncreaseViewCountBatch(ctx context.Context,
+	bizs []string, bizIds []int64) error {
+	err := r.dao.IncreaseViewCountBatch(ctx, bizs, bizIds)
+	if err != nil {
+		return err
+	}
+	go func() {
+		for i := range bizs {
+			er := r.cache.IncreaseViewCountIfPresent(ctx, bizs[i], bizIds[i])
+			if er != nil {
+				r.l.Error("Failed to increase view count Cache",
+					logger.Error(er),
+					logger.String("biz", bizs[i]),
+					logger.Int64("bizId", bizIds[i]),
+				)
+			}
+		}
+	}()
+	return nil
+}
+
 func (r *CachedInteractiveRepository) IncreaseLike(ctx context.Context,
 	biz string, id int64, uid int64) error {
 	err := r.dao.InsertLikeInfo(ctx, biz, id, uid)
@@ -72,9 +94,9 @@ func (r *CachedInteractiveRepository) AddCollectionItem(ctx context.Context,
 
 func (r *CachedInteractiveRepository) Get(ctx context.Context,
 	biz string, id int64) (domain.InteractiveCount, error) {
-	cache, err := r.cache.Get(ctx, biz, id)
+	c, err := r.cache.Get(ctx, biz, id)
 	if err == nil {
-		return cache, nil
+		return c, nil
 	}
 
 	inter, err := r.dao.Get(ctx, biz, id)

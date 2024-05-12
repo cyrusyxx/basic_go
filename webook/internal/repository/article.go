@@ -28,10 +28,13 @@ type CachedArticleRepository struct {
 	authorDAO dao.ArticleAuthorDAO
 }
 
-func NewCachedArticleRepository(dao dao.ArticleDAO, cache cache.ArticleCache) ArticleRepository {
+func NewCachedArticleRepository(dao dao.ArticleDAO,
+	cache cache.ArticleCache,
+	userRepo UserRepository) ArticleRepository {
 	return &CachedArticleRepository{
-		dao:   dao,
-		cache: cache,
+		dao:      dao,
+		cache:    cache,
+		userRepo: userRepo,
 	}
 }
 
@@ -166,7 +169,7 @@ func (r *CachedArticleRepository) GetPubById(ctx context.Context,
 	// Get from cache
 	res, err := r.cache.GetPubById(ctx, id)
 	if err == nil {
-		return res, err
+		return res, nil
 	}
 
 	// Get article from database
@@ -210,7 +213,7 @@ func (r *CachedArticleRepository) toEntity(arti domain.Article) dao.Article {
 		AuthorId: arti.Author.Id,
 		Title:    arti.Title,
 		Content:  arti.Content,
-		States:   uint8(arti.Status),
+		Status:   uint8(arti.Status),
 	}
 }
 
@@ -221,7 +224,7 @@ func (r *CachedArticleRepository) toDomain(arti dao.Article) domain.Article {
 		Title:   arti.Title,
 		Content: arti.Content,
 		Author:  domain.Author{Id: arti.AuthorId},
-		Status:  domain.ArticleStatus(arti.States),
+		Status:  domain.ArticleStatus(arti.Status),
 
 		Ctime: time.UnixMilli(arti.Ctime),
 		Utime: time.UnixMilli(arti.Utime),
