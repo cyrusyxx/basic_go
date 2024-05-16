@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 	"webook/webook/internal/integration/startup"
-	"webook/webook/internal/web"
+	"webook/webook/pkg/ginx"
 )
 
 func TestUserHandler_SendSMSCode(t *testing.T) {
@@ -25,7 +25,7 @@ func TestUserHandler_SendSMSCode(t *testing.T) {
 		phone string
 
 		wantCode int
-		wnatBody web.Result
+		wnatBody ginx.Result
 	}{
 		{
 			name: "send sms code success",
@@ -49,7 +49,7 @@ func TestUserHandler_SendSMSCode(t *testing.T) {
 			},
 			phone:    "18512345678",
 			wantCode: http.StatusOK,
-			wnatBody: web.Result{
+			wnatBody: ginx.Result{
 				Msg: "Send SMS code success",
 			},
 		},
@@ -76,7 +76,7 @@ func TestUserHandler_SendSMSCode(t *testing.T) {
 			},
 			phone:    "18512345678",
 			wantCode: http.StatusOK,
-			wnatBody: web.Result{
+			wnatBody: ginx.Result{
 				Code: 4,
 				Msg:  "Send SMS code too fast",
 			},
@@ -101,7 +101,7 @@ func TestUserHandler_SendSMSCode(t *testing.T) {
 			if tc.wantCode != http.StatusOK {
 				return
 			}
-			var res web.Result
+			var res ginx.Result
 			err = json.NewDecoder(recoder.Body).Decode(&res)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wnatBody, res)

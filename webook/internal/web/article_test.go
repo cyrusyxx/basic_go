@@ -13,6 +13,7 @@ import (
 	"webook/webook/internal/service"
 	svcmocks "webook/webook/internal/service/mocks"
 	ijwt "webook/webook/internal/web/jwt"
+	"webook/webook/pkg/ginx"
 	"webook/webook/pkg/logger"
 )
 
@@ -23,7 +24,7 @@ func TestArticleHandler_Publish(t *testing.T) {
 		reqBody string
 
 		wantCode int
-		wantRes  Result
+		wantRes  ginx.Result
 	}{
 		{
 			name: "success",
@@ -45,7 +46,7 @@ func TestArticleHandler_Publish(t *testing.T) {
 }
 `,
 			wantCode: http.StatusOK,
-			wantRes: Result{
+			wantRes: ginx.Result{
 				Data: float64(1),
 			},
 		},
@@ -78,7 +79,7 @@ func TestArticleHandler_Publish(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			server.ServeHTTP(recorder, req)
 
-			var res Result
+			var res ginx.Result
 			err = json.NewDecoder(recorder.Body).Decode(&res)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wantCode, recorder.Code)

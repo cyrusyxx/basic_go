@@ -12,6 +12,7 @@ import (
 	"webook/webook/internal/domain"
 	"webook/webook/internal/service"
 	ijwt "webook/webook/internal/web/jwt"
+	"webook/webook/pkg/ginx"
 )
 
 // Email and password regexp pattern
@@ -296,7 +297,7 @@ func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
 	}
 
 	if req.Phone == "" {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 4,
 			Msg:  "Please input phone number",
 		})
@@ -306,16 +307,16 @@ func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
 	err := h.codesvc.Send(ctx, bizlogin, req.Phone)
 	switch err {
 	case nil:
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg: "Send SMS code success",
 		})
 	case service.ErrCodeSendTooFast:
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 4,
 			Msg:  "Send SMS code too fast",
 		})
 	default:
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "Send SMS code failed",
 		})
@@ -334,7 +335,7 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 
 	ok, err := h.codesvc.Verify(ctx, bizlogin, req.Phone, req.Code)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "System error",
 		})
@@ -342,7 +343,7 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 		return
 	}
 	if !ok {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 4,
 			Msg:  "Code is wrong, please input again",
 		})
@@ -350,14 +351,14 @@ func (h *UserHandler) VerifySMSLoginCode(ctx *gin.Context) {
 	}
 	u, err := h.usersvc.FindOrCreate(ctx, req.Phone)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "System error",
 		})
 		return
 	}
 	h.SetJWTToken(ctx, u.Id)
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "Login success",
 	})
 }
@@ -385,7 +386,7 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 	}
 
 	h.SetJWTToken(ctx, rc.Uid)
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "Refresh token success",
 	})
 }
@@ -393,7 +394,7 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 func (h *UserHandler) LogoutJWT(ctx *gin.Context) {
 	err := h.ClearToken(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "System error",
 		})

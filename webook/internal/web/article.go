@@ -1,14 +1,17 @@
 package web
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
 	"net/http"
 	"strconv"
 	"time"
 	"webook/webook/internal/domain"
+	"webook/webook/internal/errs"
 	"webook/webook/internal/service"
 	ijwt "webook/webook/internal/web/jwt"
+	"webook/webook/pkg/ginx"
 	"webook/webook/pkg/logger"
 )
 
@@ -38,8 +41,8 @@ func NewArticleHandler(l logger.Logger,
 
 func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g := server.Group("/article")
-	g.POST("/edit", h.Edit)
-	g.POST("/publish", h.Publish)
+	g.POST("/edit", ginx.WrapBodyAndClaims(h.Edit))
+	g.POST("/publish", ginx.WrapBodyAndClaims(h.Publish))
 	g.POST("/withdraw", h.Withdraw)
 
 	g.GET("/detail/:id", h.Detail)
@@ -51,17 +54,8 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g.POST("/pub/collect", h.Collect)
 }
 
-func (h *ArticleHandler) Edit(ctx *gin.Context) {
-	type Req struct {
-		Id      int64  `json:"id"`
-		Title   string `json:"title"`
-		Content string `json:"content"`
-	}
-	var req Req
-	if err := ctx.Bind(&req); err != nil {
-		return
-	}
-	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+func (h *ArticleHandler) Edit(ctx *gin.Context,
+	req EditReq, uc ijwt.UserClaims) (ginx.Result, error) {
 	id, err := h.svc.Save(ctx, domain.Article{
 		Id:      req.Id,
 		Title:   req.Title,
@@ -71,29 +65,19 @@ func (h *ArticleHandler) Edit(ctx *gin.Context) {
 		},
 	})
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
-			Code: 0,
+		return ginx.Result{
+			Code: errs.ArticleInternalServerError,
 			Msg:  "System Error",
 			Data: nil,
-		})
-		h.l.Error("Failed to save article", logger.Error(err))
+		}, fmt.Errorf("failed to save article: %w", err)
 	}
-	ctx.JSON(http.StatusOK, Result{
+	return ginx.Result{
 		Data: id,
-	})
+	}, nil
 }
 
-func (h *ArticleHandler) Publish(ctx *gin.Context) {
-	type Req struct {
-		Id      int64  `json:"id"`
-		Title   string `json:"title"`
-		Content string `json:"content"`
-	}
-	var req Req
-	if err := ctx.Bind(&req); err != nil {
-		return
-	}
-	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+func (h *ArticleHandler) Publish(ctx *gin.Context,
+	req PublishReq, uc ijwt.UserClaims) (ginx.Result, error) {
 	id, err := h.svc.Publish(ctx, domain.Article{
 		Id:      req.Id,
 		Title:   req.Title,
@@ -103,16 +87,15 @@ func (h *ArticleHandler) Publish(ctx *gin.Context) {
 		},
 	})
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
-			Code: 0,
+		return ginx.Result{
+			Code: errs.ArticleInternalServerError,
 			Msg:  "System Error",
 			Data: nil,
-		})
-		h.l.Error("Failed to save article", logger.Error(err))
+		}, fmt.Errorf("failed to publish article: %w", err)
 	}
-	ctx.JSON(http.StatusOK, Result{
+	return ginx.Result{
 		Data: id,
-	})
+	}, nil
 }
 
 func (h *ArticleHandler) Withdraw(ctx *gin.Context) {
@@ -126,14 +109,14 @@ func (h *ArticleHandler) Withdraw(ctx *gin.Context) {
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
 	err := h.svc.Withdraw(ctx, uc.Uid, req.Id)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 0,
 			Msg:  "System Error",
 			Data: nil,
 		})
 		h.l.Error("Failed to withdraw article", logger.Error(err))
 	}
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "OK",
 	})
 }
@@ -146,7 +129,7 @@ func (h *ArticleHandler) List(ctx *gin.Context) {
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
 	artis, err := h.svc.GetByAuthor(ctx, uc.Uid, page.Offset, page.Limit)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "System Error",
 			Data: nil,
@@ -154,7 +137,7 @@ func (h *ArticleHandler) List(ctx *gin.Context) {
 		h.l.Error("Failed to get article list", logger.Error(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: toAbstractVos(artis),
 	})
 }
@@ -164,7 +147,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 	idstr := ctx.Param("id")
 	id, err := strconv.ParseInt(idstr, 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 4,
 			Msg:  "Invalid parameter: id",
 		})
@@ -174,7 +157,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 	// Get article by id
 	arti, err := h.svc.GetById(ctx, id)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "System Error",
 			Data: nil,
@@ -186,7 +169,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 	// Check if the id is right
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
 	if arti.Author.Id != uc.Uid {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "System Error",
 			Code: 5,
 		})
@@ -196,7 +179,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: toContentVo(arti, domain.InteractiveCount{}),
 	})
 }
@@ -206,7 +189,7 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 	idstr := ctx.Param("id")
 	id, err := strconv.ParseInt(idstr, 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 4,
 			Msg:  "Invalid parameter: id",
 		})
@@ -235,7 +218,7 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 
 	err = eg.Wait()
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "System Error",
 			Data: nil,
@@ -248,7 +231,7 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 	err = h.interSvc.IncreaseViewCount(ctx, h.biz, id)
 
 	// Return article
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: toContentVo(arti, inter),
 		Msg:  "OK",
 	})
@@ -273,14 +256,14 @@ func (h *ArticleHandler) Like(ctx *gin.Context) {
 		err = h.interSvc.CancelLike(ctx, h.biz, req.Id, uc.Uid)
 	}
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "System Error",
 		})
 		h.l.Error("Failed to like article", logger.Error(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "OK",
 	})
 }
@@ -299,14 +282,14 @@ func (h *ArticleHandler) Collect(ctx *gin.Context) {
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
 	err := h.interSvc.Collect(ctx, h.biz, req.Id, req.Cid, uc.Uid)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "System Error",
 		})
 		h.l.Error("Failed to collect article", logger.Error(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "OK",
 	})
 }

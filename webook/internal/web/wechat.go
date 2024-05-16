@@ -6,6 +6,7 @@ import (
 	"webook/webook/internal/service"
 	"webook/webook/internal/service/oauth2/wechat"
 	ijwt "webook/webook/internal/web/jwt"
+	"webook/webook/pkg/ginx"
 )
 
 type OAuth2WechatHandler struct {
@@ -35,13 +36,13 @@ func (o *OAuth2WechatHandler) Auth2Url(ctx *gin.Context) {
 	panic("implement me")
 	url, err := o.svc.AuthUrl(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "generate auth url failed",
 		})
 		return
 	}
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: url,
 	})
 }
@@ -51,7 +52,7 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 	//state := ctx.Query("state")
 	wechatInfo, err := o.svc.VerifyCode(ctx, code)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 4,
 			Msg:  "verify code failed",
 		})
@@ -59,14 +60,14 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 	}
 	u, err := o.usersvc.FindOrCreateByWechat(ctx, wechatInfo)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
 			Msg:  "find or create user failed",
 		})
 		return
 	}
 	o.SetJWTToken(ctx, u.Id)
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "Login success",
 	})
 	return

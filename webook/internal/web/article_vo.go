@@ -17,3 +17,14 @@ type ArticleVo struct {
 	Liked      bool  `json:"liked,omitempty"`
 	Collected  bool  `json:"collected,omitempty"`
 }
+
+type PublishReq struct {
+	Id      int64  `json:"id"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
+}
+type EditReq struct {
+	Id      int64  `json:"id"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
+}

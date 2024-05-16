@@ -4,11 +4,14 @@ import (
 	"context"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 	"webook/webook/constants"
 	"webook/webook/internal/web"
 	ijwt "webook/webook/internal/web/jwt"
 	"webook/webook/internal/web/middleware"
+	"webook/webook/pkg/ginx"
+	myprometheus "webook/webook/pkg/ginx/middleware/prometheus"
 	"webook/webook/pkg/ginx/middleware/ratelimit"
 	"webook/webook/pkg/limiter"
 	"webook/webook/pkg/logger"
@@ -26,6 +29,11 @@ func InitWebServer(middlewareFuncs []gin.HandlerFunc,
 }
 
 func InitMiddleware(redisdb redis.Cmdable, hdl ijwt.Handler, lger logger.Logger) []gin.HandlerFunc {
+	ginx.InitCounter(prometheus.CounterOpts{
+		Namespace: "webook",
+		Subsystem: "webook_backend",
+		Name:      "biz_code",
+	})
 	return []gin.HandlerFunc{
 		// Use Middlewares
 		cors.New(cors.Config{
@@ -53,5 +61,15 @@ func InitMiddleware(redisdb redis.Cmdable, hdl ijwt.Handler, lger logger.Logger)
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(
 			redisdb, constants.RateLimitInterval, constants.RateLimitRate,
 		)).Build(),
+		myprometheus.NewBuilder("webook",
+			"webook_backend",
+			"gin_http",
+			"",
+		).BuildResponseTime(),
+		myprometheus.NewBuilder("webook",
+			"webook_backend",
+			"gin_http",
+			"",
+		).BuildActiveRequest(),
 	}
 }
