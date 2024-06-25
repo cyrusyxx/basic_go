@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
+	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"webook/webook/constants"
 	"webook/webook/internal/web"
 	ijwt "webook/webook/internal/web/jwt"
@@ -71,5 +72,6 @@ func InitMiddleware(redisdb redis.Cmdable, hdl ijwt.Handler, lger logger.Logger)
 			"gin_http",
 			"",
 		).BuildActiveRequest(),
+		otelgin.Middleware("webook"),
 	}
 }

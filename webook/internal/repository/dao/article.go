@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
+	"webook/webook/internal/domain"
 )
 
 type Article struct {
@@ -29,6 +30,7 @@ type ArticleDAO interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int64, limit int64) ([]Article, error)
 	GetById(ctx context.Context, id int64) (Article, error)
 	GetPubById(ctx context.Context, id int64) (PublicArticle, error)
+	ListPub(ctx context.Context, start time.Time, offset int64, limit int64) ([]Article, error)
 }
 
 type GORMArticleDAO struct {
@@ -159,4 +161,15 @@ func (d *GORMArticleDAO) GetPubById(ctx context.Context,
 		Where("id = ?", id).
 		First(&arti).Error
 	return arti, err
+}
+
+func (d *GORMArticleDAO) ListPub(ctx context.Context,
+	start time.Time, offset int64, limit int64) ([]Article, error) {
+	var artis []Article
+	err := d.db.WithContext(ctx).
+		Where("status = ? AND utime < ?",
+			domain.ArticleStatusPublished, start.UnixMilli()).
+		Offset(int(offset)).Limit(int(limit)).
+		Find(&artis).Error
+	return artis, err
 }

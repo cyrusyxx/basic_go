@@ -10,20 +10,26 @@ import (
 //none
 
 func main() {
+	// Init CONFIG, LOGGER, APP, PROMETHEUS
 	config.InitConfig()
 	initLogger()
-	//Testlog()
 	app := InitWebServer()
 	initPrometheus()
+
+	// Start consumers
 	for _, c := range app.consumers {
 		err := c.Start()
 		if err != nil {
 			panic(err)
 		}
 	}
-	server := app.server
+
+	// Start Cron Job
+	app.cron.Start()
+	defer app.cron.Stop()
 
 	// Run Server
+	server := app.server
 	err := server.Run(":8080")
 	if err != nil {
 		panic(err)
@@ -47,45 +53,3 @@ func initPrometheus() {
 		}
 	}()
 }
-
-func Testlog() {
-	type st struct {
-		Name string
-		Age  int
-	}
-	t := st{
-		Name: "test",
-		Age:  18,
-	}
-	zap.L().Info("Test log", zap.Any("teststruct", t))
-	zap.L().Warn("Test log warn")
-	zap.L().Error("Test log error")
-	zap.L().Debug("Test log debug")
-}
-
-//
-//func mainSarama() {
-//	//	sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
-//	var kafkaAddr = []string{"cyrusss.top:9094"}
-//	cfg := sarama.NewConfig()
-//	cfg.Producer.Return.Successes = true
-//	producer, err := sarama.NewSyncProducer(kafkaAddr, cfg)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	_, _, err = producer.SendMessage(&sarama.ProducerMessage{
-//		Topic: "test_topic",
-//		Value: sarama.StringEncoder("test:test"),
-//		Headers: []sarama.RecordHeader{
-//			{
-//				Key:   []byte("key11"),
-//				Value: []byte("value11"),
-//			},
-//		},
-//		Metadata: "this is metadata",
-//	})
-//	if err != nil {
-//		panic(err)
-//	}
-//}

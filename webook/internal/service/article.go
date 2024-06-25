@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/events/article"
 	"webook/webook/internal/repository"
@@ -15,6 +16,7 @@ type ArticleService interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int64, limit int64) ([]domain.Article, error)
 	GetById(ctx context.Context, id int64) (domain.Article, error)
 	GetPubById(ctx context.Context, uid, id int64) (domain.Article, error)
+	ListPub(ctx context.Context, start time.Time, offset, limit int64) ([]domain.Article, error)
 }
 
 type ImplArticleService struct {
@@ -80,4 +82,9 @@ func (s *ImplArticleService) GetPubById(ctx context.Context,
 	}()
 
 	return res, err
+}
+
+func (s *ImplArticleService) ListPub(ctx context.Context,
+	start time.Time, offset, limit int64) ([]domain.Article, error) {
+	return s.repo.ListPub(ctx, start, offset, limit)
 }

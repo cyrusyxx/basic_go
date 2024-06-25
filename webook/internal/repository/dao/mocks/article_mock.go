@@ -40,6 +40,51 @@ func (m *MockArticleDAO) EXPECT() *MockArticleDAOMockRecorder {
 	return m.recorder
 }
 
+// GetByAuthor mocks base method.
+func (m *MockArticleDAO) GetByAuthor(ctx context.Context, uid, offset, limit int64) ([]dao.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByAuthor", ctx, uid, offset, limit)
+	ret0, _ := ret[0].([]dao.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByAuthor indicates an expected call of GetByAuthor.
+func (mr *MockArticleDAOMockRecorder) GetByAuthor(ctx, uid, offset, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAuthor", reflect.TypeOf((*MockArticleDAO)(nil).GetByAuthor), ctx, uid, offset, limit)
+}
+
+// GetById mocks base method.
+func (m *MockArticleDAO) GetById(ctx context.Context, id int64) (dao.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetById", ctx, id)
+	ret0, _ := ret[0].(dao.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetById indicates an expected call of GetById.
+func (mr *MockArticleDAOMockRecorder) GetById(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockArticleDAO)(nil).GetById), ctx, id)
+}
+
+// GetPubById mocks base method.
+func (m *MockArticleDAO) GetPubById(ctx context.Context, id int64) (dao.PublicArticle, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPubById", ctx, id)
+	ret0, _ := ret[0].(dao.PublicArticle)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPubById indicates an expected call of GetPubById.
+func (mr *MockArticleDAOMockRecorder) GetPubById(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubById", reflect.TypeOf((*MockArticleDAO)(nil).GetPubById), ctx, id)
+}
+
 // Insert mocks base method.
 func (m *MockArticleDAO) Insert(ctx context.Context, arti dao.Article) (int64, error) {
 	m.ctrl.T.Helper()
@@ -53,6 +98,35 @@ func (m *MockArticleDAO) Insert(ctx context.Context, arti dao.Article) (int64, e
 func (mr *MockArticleDAOMockRecorder) Insert(ctx, arti any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockArticleDAO)(nil).Insert), ctx, arti)
+}
+
+// Sync mocks base method.
+func (m *MockArticleDAO) Sync(ctx context.Context, entity dao.Article) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Sync", ctx, entity)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Sync indicates an expected call of Sync.
+func (mr *MockArticleDAOMockRecorder) Sync(ctx, entity any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sync", reflect.TypeOf((*MockArticleDAO)(nil).Sync), ctx, entity)
+}
+
+// SyncStatus mocks base method.
+func (m *MockArticleDAO) SyncStatus(ctx context.Context, uid, id int64, status uint8) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncStatus", ctx, uid, id, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncStatus indicates an expected call of SyncStatus.
+func (mr *MockArticleDAOMockRecorder) SyncStatus(ctx, uid, id, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncStatus", reflect.TypeOf((*MockArticleDAO)(nil).SyncStatus), ctx, uid, id, status)
 }
 
 // UpdateById mocks base method.

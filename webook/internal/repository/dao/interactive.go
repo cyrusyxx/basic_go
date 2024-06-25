@@ -16,13 +16,14 @@ type InteractiveDAO interface {
 	GetLikeInfo(ctx context.Context, biz string, id int64, uid int64) (UserLikeBiz, error)
 	GetCollectInfo(ctx context.Context, biz string, id int64, uid int64) (UserCollectionBiz, error)
 	Get(ctx context.Context, biz string, id int64) (InteractiveCount, error)
+	GetByIds(ctx context.Context, biz string, ids []int64) ([]InteractiveCount, error)
 }
 
 type InteractiveCount struct {
 	Id int64 `gorm:"primaryKey,autoIncrement"`
 
-	BizId int64  `gorm:"uniqueIndex:biz_type_id"`
 	Biz   string `gorm:"type:varchar(128);uniqueIndex:biz_type_id"`
+	BizId int64  `gorm:"uniqueIndex:biz_type_id"`
 
 	ViewCnt    int64
 	LikeCnt    int64
@@ -213,4 +214,13 @@ func (d *GORMInteractiveDAO) Get(ctx context.Context, biz string, id int64) (Int
 		Where("biz = ? AND biz_id = ?", biz, id).
 		First(&count).Error
 	return count, err
+}
+
+func (d *GORMInteractiveDAO) GetByIds(ctx context.Context,
+	biz string, ids []int64) ([]InteractiveCount, error) {
+	var counts []InteractiveCount
+	err := d.db.WithContext(ctx).
+		Where("biz = ? AND biz_id IN ?", biz, ids).
+		First(&counts).Error
+	return counts, err
 }

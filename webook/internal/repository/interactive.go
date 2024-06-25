@@ -17,6 +17,7 @@ type InteractiveRepository interface {
 	Get(ctx context.Context, biz string, id int64) (domain.InteractiveCount, error)
 	Liked(ctx context.Context, biz string, id int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, id int64, uid int64) (bool, error)
+	GetByIds(ctx context.Context, biz string, ids []int64) ([]domain.InteractiveCount, error)
 }
 
 type CachedInteractiveRepository struct {
@@ -114,14 +115,6 @@ func (r *CachedInteractiveRepository) Get(ctx context.Context,
 
 }
 
-func (r *CachedInteractiveRepository) toDomain(inter dao.InteractiveCount) domain.InteractiveCount {
-	return domain.InteractiveCount{
-		ViewCnt:    inter.ViewCnt,
-		LikeCnt:    inter.LikeCnt,
-		CollectCnt: inter.CollectCnt,
-	}
-}
-
 func (r *CachedInteractiveRepository) Liked(ctx context.Context,
 	biz string, id int64, uid int64) (bool, error) {
 	_, err := r.dao.GetLikeInfo(ctx, biz, id, uid)
@@ -146,4 +139,31 @@ func (r *CachedInteractiveRepository) Collected(ctx context.Context,
 	default:
 		return false, err
 	}
+}
+
+func (r *CachedInteractiveRepository) GetByIds(ctx context.Context,
+	biz string, ids []int64) ([]domain.InteractiveCount, error) {
+	inters, err := r.dao.GetByIds(ctx, biz, ids)
+	if err != nil {
+		return nil, err
+	}
+	return r.toDomains(inters), nil
+}
+
+func (r *CachedInteractiveRepository) toDomain(inter dao.InteractiveCount) domain.InteractiveCount {
+	return domain.InteractiveCount{
+		BizId:      inter.BizId,
+		ViewCnt:    inter.ViewCnt,
+		LikeCnt:    inter.LikeCnt,
+		CollectCnt: inter.CollectCnt,
+	}
+}
+
+// toDomains
+func (r *CachedInteractiveRepository) toDomains(inters []dao.InteractiveCount) []domain.InteractiveCount {
+	res := make([]domain.InteractiveCount, len(inters))
+	for i := range inters {
+		res[i] = r.toDomain(inters[i])
+	}
+	return res
 }
