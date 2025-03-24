@@ -283,7 +283,16 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	//	u.Id, u.Email, u.NickName, u.Birthday, u.Description)
 
 	// 返回用户信息
-	ctx.JSON(http.StatusOK, u)
+	ctx.JSON(http.StatusOK, Result{
+		Data: UserVo{
+			Id:          u.Id,
+			Email:       u.Email,
+			Phone:       u.Phone,
+			NickName:    u.NickName,
+			Birthday:    u.Birthday,
+			Description: u.Description,
+		},
+	})
 	//ctx.String(http.StatusOK, response)
 }
 
