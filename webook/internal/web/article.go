@@ -41,6 +41,7 @@ func NewArticleHandler(l logger.Logger,
 
 func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g := server.Group("/article")
+
 	g.POST("/edit", ginx.WrapBodyAndClaims(h.Edit))
 	g.POST("/publish", ginx.WrapBodyAndClaims(h.Publish))
 	g.POST("/withdraw", h.Withdraw)
@@ -54,8 +55,8 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g.POST("/pub/collect", h.Collect)
 }
 
-func (h *ArticleHandler) Edit(ctx *gin.Context,
-	req EditReq, uc ijwt.UserClaims) (ginx.Result, error) {
+func (h *ArticleHandler) Edit(ctx *gin.Context, req EditReq, uc ijwt.UserClaims) (ginx.Result, error) {
+
 	id, err := h.svc.Save(ctx, domain.Article{
 		Id:      req.Id,
 		Title:   req.Title,
@@ -71,13 +72,13 @@ func (h *ArticleHandler) Edit(ctx *gin.Context,
 			Data: nil,
 		}, fmt.Errorf("failed to save article: %w", err)
 	}
+
 	return ginx.Result{
 		Data: id,
 	}, nil
 }
 
-func (h *ArticleHandler) Publish(ctx *gin.Context,
-	req PublishReq, uc ijwt.UserClaims) (ginx.Result, error) {
+func (h *ArticleHandler) Publish(ctx *gin.Context, req PublishReq, uc ijwt.UserClaims) (ginx.Result, error) {
 	id, err := h.svc.Publish(ctx, domain.Article{
 		Id:      req.Id,
 		Title:   req.Title,
