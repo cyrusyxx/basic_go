@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -245,7 +244,7 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "Hello form profile/n")
+	//ctx.String(http.StatusOK, "Hello form profile/n")
 
 	//sess := sessions.Default(ctx)
 	//uid := sess.Get("userId").(int64)
@@ -280,11 +279,12 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 
-	response := fmt.Sprintf("id=%d\nEmail=%s\nNickName=%s\nBirthday=%s\nDescription=%s\n",
-		u.Id, u.Email, u.NickName, u.Birthday, u.Description)
+	//response := fmt.Sprintf("id=%d\nEmail=%s\nNickName=%s\nBirthday=%s\nDescription=%s\n",
+	//	u.Id, u.Email, u.NickName, u.Birthday, u.Description)
 
 	// 返回用户信息
-	ctx.String(http.StatusOK, response)
+	ctx.JSON(http.StatusOK, u)
+	//ctx.String(http.StatusOK, response)
 }
 
 func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
