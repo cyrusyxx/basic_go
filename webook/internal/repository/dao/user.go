@@ -28,22 +28,20 @@ type GORMUserDAO struct {
 }
 
 type User struct {
-	Id       int64          `gorm:"primaryKey, autoincrement"` // There is a Bug!!!
-	Email    sql.NullString `gorm:"unique"`
-	Password string
-	Phone    sql.NullString `gorm:"unique"`
+	Id       int64          `gorm:"primaryKey;autoIncrement"`
+	Email    sql.NullString `gorm:"type:varchar(100);unique;comment:邮箱"`
+	Password string         `gorm:"type:varchar(255);not null;comment:密码"`
+	Phone    sql.NullString `gorm:"type:varchar(100);unique;comment:手机号"`
 
-	NickName    string
-	Birthday    string
-	Description string
+	NickName    string `gorm:"type:varchar(100);comment:昵称"`
+	Birthday    string `gorm:"type:varchar(50);comment:生日"`
+	Description string `gorm:"type:varchar(1000);comment:个人简介"`
 
-	WechatOpenId  sql.NullString `gorm:"unique"`
-	WechatUnionId sql.NullString
+	WechatOpenId  sql.NullString `gorm:"type:varchar(100);unique;comment:微信开放ID"`
+	WechatUnionId sql.NullString `gorm:"type:varchar(100);comment:微信联合ID"`
 
-	// Create time
-	Ctime int64
-	// Update time
-	Utime int64
+	Ctime int64 `gorm:"type:bigint;comment:创建时间"`
+	Utime int64 `gorm:"type:bigint;comment:更新时间"`
 }
 
 func NewGORMUserDAO(db *gorm.DB) UserDAO {
