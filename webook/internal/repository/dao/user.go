@@ -29,16 +29,16 @@ type GORMUserDAO struct {
 
 type User struct {
 	Id       int64          `gorm:"primaryKey;autoIncrement"`
-	Email    sql.NullString `gorm:"type:varchar(100);unique;comment:邮箱"`
-	Password string         `gorm:"type:varchar(255);not null;comment:密码"`
-	Phone    sql.NullString `gorm:"type:varchar(100);unique;comment:手机号"`
+	Email    sql.NullString `gorm:"type:varchar(32);unique;comment:邮箱"`
+	Password string         `gorm:"type:varchar(32);not null;comment:密码"`
+	Phone    sql.NullString `gorm:"type:varchar(16);unique;comment:手机号"`
 
-	NickName    string `gorm:"type:varchar(100);comment:昵称"`
-	Birthday    string `gorm:"type:varchar(50);comment:生日"`
-	Description string `gorm:"type:varchar(1000);comment:个人简介"`
+	NickName    string `gorm:"type:varchar(128);comment:昵称"`
+	Birthday    string `gorm:"type:varchar(16);comment:生日"`
+	Description string `gorm:"type:varchar(1024);comment:个人简介"`
 
-	WechatOpenId  sql.NullString `gorm:"type:varchar(100);unique;comment:微信开放ID"`
-	WechatUnionId sql.NullString `gorm:"type:varchar(100);comment:微信联合ID"`
+	WechatOpenId  sql.NullString `gorm:"type:varchar(32);unique;comment:微信开放ID"`
+	WechatUnionId sql.NullString `gorm:"type:varchar(32);comment:微信联合ID"`
 
 	Ctime int64 `gorm:"type:bigint;comment:创建时间"`
 	Utime int64 `gorm:"type:bigint;comment:更新时间"`

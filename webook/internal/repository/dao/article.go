@@ -11,7 +11,7 @@ import (
 
 type Article struct {
 	Id       int64  `gorm:"primaryKey;autoIncrement" bson:"id,omitempty"`
-	Title    string `gorm:"type:varchar(4096)" bson:"title,omitempty"`
+	Title    string `gorm:"type:varchar(256)" bson:"title,omitempty"`
 	Content  string `gorm:"type:longtext" bson:"content,omitempty"`
 	AuthorId int64  `gorm:"index" bson:"author_id,omitempty"`
 	Status   uint8  `bson:"status,omitempty"`

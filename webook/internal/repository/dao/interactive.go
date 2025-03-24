@@ -20,7 +20,7 @@ type InteractiveDAO interface {
 }
 
 type InteractiveCount struct {
-	Id int64 `gorm:"primaryKey,autoIncrement"`
+	Id int64 `gorm:"primaryKey;autoIncrement"`
 
 	Biz   string `gorm:"type:varchar(128);uniqueIndex:biz_type_id"`
 	BizId int64  `gorm:"uniqueIndex:biz_type_id"`
