@@ -21,10 +21,10 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Skip login check for signup and login
 		path := ctx.Request.URL.Path
-		if path == "/users/signup" ||
-			path == "/users/login" ||
-			path == "/users/login_sms/code/send" ||
-			path == "/users/login_sms/code/verify" ||
+		if path == "/user/signup" ||
+			path == "/user/login" ||
+			path == "/user/login_sms/code/send" ||
+			path == "/user/login_sms/code/verify" ||
 			path == "/oauth2/wechat/callback" ||
 			path == "/oauth2/wechat/authurl" {
 			return

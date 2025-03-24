@@ -30,7 +30,7 @@ type GORMUserDAO struct {
 type User struct {
 	Id       int64          `gorm:"primaryKey;autoIncrement"`
 	Email    sql.NullString `gorm:"type:varchar(32);unique;comment:邮箱"`
-	Password string         `gorm:"type:varchar(32);not null;comment:密码"`
+	Password string         `gorm:"type:varchar(128);not null;comment:密码"`
 	Phone    sql.NullString `gorm:"type:varchar(16);unique;comment:手机号"`
 
 	NickName    string `gorm:"type:varchar(128);comment:昵称"`

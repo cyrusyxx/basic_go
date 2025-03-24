@@ -45,7 +45,7 @@ func NewUserHandler(svc service.UserService,
 
 // RegisterRoutes Register Router
 func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
-	ug := server.Group("/users")
+	ug := server.Group("/user")
 	ug.POST("/signup", h.SignUp)
 	//ug.POST("/login", h.Login)
 	ug.POST("/login", h.LoginJWT)
@@ -65,7 +65,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	type SignupReq struct {
 		Email           string `json:"email"`
 		Password        string `json:"password"`
-		ConfirmPassword string `json:"confirmPassword"`
+		ConfirmPassword string `json:"confirm_password"`
 	}
 	var req SignupReq
 
