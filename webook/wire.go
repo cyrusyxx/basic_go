@@ -12,8 +12,6 @@ import (
 	ijwt "webook/webook/internal/web/jwt"
 	"webook/webook/ioc"
 
-	"time"
-
 	"github.com/google/wire"
 )
 
@@ -25,7 +23,7 @@ var interactiveSet = wire.NewSet(
 )
 
 var rankingSvcSet = wire.NewSet(
-	wire.Value(time.Minute*3), // expiration for ranking cache
+	cache.NewRedisRankingCache,
 	cache.NewRankingLocalCache,
 	repository.NewCachedRankingRepository,
 	service.NewBatchRankingService,
