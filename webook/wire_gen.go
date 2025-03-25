@@ -71,4 +71,4 @@ func InitWebServer() *App {
 
 var interactiveSet = wire.NewSet(dao.NewGORMInteractiveDAO, cache.NewRedisInteractiveCache, repository.NewCachedInteractiveRepository, service.NewInteractiveService)
 
-var rankingSvcSet = wire.NewSet(cache.NewRankingLocalCache, cache.NewRedisRankingCache, repository.NewCachedRankingRepository, service.NewBatchRankingService)
+var rankingSvcSet = wire.NewSet(cache.NewRedisRankingCache, cache.NewRankingLocalCache, repository.NewCachedRankingRepository, service.NewBatchRankingService)
