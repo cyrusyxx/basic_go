@@ -51,7 +51,6 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 
 	g.GET("/pub/:id", h.PubDetail)
 	g.POST("/pub/like", h.Like)
-
 	g.POST("/pub/collect", h.Collect)
 }
 
@@ -104,10 +103,12 @@ func (h *ArticleHandler) Withdraw(ctx *gin.Context) {
 		Id int64 `json:"id"`
 	}
 	var req Req
+
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+
 	err := h.svc.Withdraw(ctx, uc.Uid, req.Id)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
@@ -117,6 +118,7 @@ func (h *ArticleHandler) Withdraw(ctx *gin.Context) {
 		})
 		h.l.Error("Failed to withdraw article", logger.Error(err))
 	}
+
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "OK",
 	})

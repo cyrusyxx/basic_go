@@ -45,14 +45,15 @@ func (s *ImplArticleService) Save(ctx context.Context, arti domain.Article) (int
 	}
 }
 
-func (s *ImplArticleService) Publish(ctx context.Context,
-	arti domain.Article) (int64, error) {
+func (s *ImplArticleService) Publish(ctx context.Context, arti domain.Article) (int64, error) {
+
 	arti.Status = domain.ArticleStatusPublished
 	return s.repo.Sync(ctx, arti)
 }
 
 func (s *ImplArticleService) Withdraw(ctx context.Context,
 	uid int64, id int64) error {
+
 	return s.repo.SyncStatus(ctx, uid, id, domain.ArticleStatusPrivate)
 }
 

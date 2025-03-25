@@ -69,8 +69,7 @@ func (r *CachedArticleRepository) Update(ctx context.Context,
 	return nil
 }
 
-func (r *CachedArticleRepository) Sync(ctx context.Context,
-	arti domain.Article) (int64, error) {
+func (r *CachedArticleRepository) Sync(ctx context.Context, arti domain.Article) (int64, error) {
 	// Sync article
 	id, err := r.dao.Sync(ctx, r.toEntity(arti))
 	if err != nil {
@@ -100,6 +99,7 @@ func (r *CachedArticleRepository) Sync(ctx context.Context,
 
 func (r *CachedArticleRepository) SyncStatus(ctx context.Context,
 	uid int64, id int64, status domain.ArticleStatus) error {
+
 	err := r.dao.SyncStatus(ctx, uid, id, uint8(status))
 	if err != nil {
 		return err
@@ -110,6 +110,7 @@ func (r *CachedArticleRepository) SyncStatus(ctx context.Context,
 	if err != nil {
 		// log
 	}
+
 	return nil
 }
 

@@ -71,17 +71,17 @@ func (d *GORMArticleDAO) UpdateById(ctx context.Context, arti Article) error {
 }
 
 func (d *GORMArticleDAO) Sync(ctx context.Context, arti Article) (int64, error) {
+	// 开启事务
 	tx := d.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return 0, tx.Error
 	}
 	defer tx.Rollback()
 
-	var (
-		id  = arti.Id
-		err error
-	)
+	var err error
+	var id = arti.Id
 	dao := NewGORMArticleDAO(tx)
+
 	if id > 0 {
 		err = dao.UpdateById(ctx, arti)
 	} else {
@@ -90,6 +90,7 @@ func (d *GORMArticleDAO) Sync(ctx context.Context, arti Article) (int64, error) 
 	if err != nil {
 		return 0, err
 	}
+
 	arti.Id = id
 	pubArti := PublicArticle(arti)
 	pubArti.Ctime = time.Now().UnixMilli()
@@ -106,13 +107,17 @@ func (d *GORMArticleDAO) Sync(ctx context.Context, arti Article) (int64, error) 
 	if err != nil {
 		return 0, err
 	}
+
 	tx.Commit()
+
 	return id, nil
 }
 
 func (d *GORMArticleDAO) SyncStatus(ctx context.Context,
 	uid int64, id int64, status uint8) error {
+
 	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+
 		res := tx.Model(&Article{}).
 			Where("id = ? AND author_id = ?", id, uid).
 			Updates(map[string]any{
@@ -125,6 +130,7 @@ func (d *GORMArticleDAO) SyncStatus(ctx context.Context,
 		if res.RowsAffected != 1 {
 			return errors.New("id or author is wrong")
 		}
+
 		return tx.Model(&PublicArticle{}).
 			Where("id = ?", uid).
 			Updates(map[string]any{
@@ -136,6 +142,7 @@ func (d *GORMArticleDAO) SyncStatus(ctx context.Context,
 
 func (d *GORMArticleDAO) GetByAuthor(ctx context.Context,
 	uid int64, offset int64, limit int64) ([]Article, error) {
+
 	var artis []Article
 	err := d.db.WithContext(ctx).
 		Where("author_id = ?", uid).
