@@ -103,7 +103,7 @@ func (d *GORMArticleDAO) Sync(ctx context.Context, arti Article) (int64, error) 
 			"utime":   time.Now().UnixMilli(),
 			"status":  pubArti.Status,
 		}),
-	}).Create(&pubArti).Error
+	}).Create(pubArti).Error
 	if err != nil {
 		return 0, err
 	}

@@ -255,13 +255,11 @@ func (h *ArticleHandler) Like(ctx *gin.Context) {
 
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
 	var err error
-
 	if req.Like {
 		err = h.interSvc.Like(ctx, h.biz, req.Id, uc.Uid)
 	} else {
 		err = h.interSvc.CancelLike(ctx, h.biz, req.Id, uc.Uid)
 	}
-
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
@@ -270,7 +268,6 @@ func (h *ArticleHandler) Like(ctx *gin.Context) {
 		h.l.Error("Failed to like article", logger.Error(err))
 		return
 	}
-
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "OK",
 	})
