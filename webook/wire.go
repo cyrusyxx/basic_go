@@ -3,7 +3,6 @@
 package main
 
 import (
-	"github.com/google/wire"
 	"webook/webook/internal/events/article"
 	"webook/webook/internal/repository"
 	"webook/webook/internal/repository/cache"
@@ -12,6 +11,8 @@ import (
 	"webook/webook/internal/web"
 	ijwt "webook/webook/internal/web/jwt"
 	"webook/webook/ioc"
+
+	"github.com/google/wire"
 )
 
 var interactiveSet = wire.NewSet(
@@ -23,6 +24,7 @@ var interactiveSet = wire.NewSet(
 
 var rankingSvcSet = wire.NewSet(
 	cache.NewRedisRankingCache,
+	cache.NewRankingLocalCache,
 	repository.NewCachedRankingRepository,
 	service.NewBatchRankingService,
 )

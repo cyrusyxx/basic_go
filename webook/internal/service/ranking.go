@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
-	"github.com/ecodeclub/ekit/queue"
 	"math"
 	"time"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/repository"
+
+	"github.com/ecodeclub/ekit/queue"
 )
 
 type RankingService interface {
@@ -27,10 +28,11 @@ type BatchRankingService struct {
 }
 
 func NewBatchRankingService(interSvc InteractiveService,
-	artiSvc ArticleService) RankingService {
+	artiSvc ArticleService, repo repository.RankingRepository) RankingService {
 	return &BatchRankingService{
 		interSvc:  interSvc,
 		artiSvc:   artiSvc,
+		repo:      repo,
 		batchSize: 100,
 		scoreFunc: func(likeCnt int64, utime time.Time) float64 {
 			dur := time.Since(utime).Seconds()
