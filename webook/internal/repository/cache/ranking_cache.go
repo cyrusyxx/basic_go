@@ -14,12 +14,12 @@ type RankingCache interface {
 }
 
 type RedisRankingCache struct {
-	client     redis.Client
+	client     redis.Cmdable
 	key        string
 	expiration time.Duration
 }
 
-func NewRedisRankingCache(client redis.Client) RankingCache {
+func NewRedisRankingCache(client redis.Cmdable) *RedisRankingCache {
 	return &RedisRankingCache{
 		client:     client,
 		key:        "ranking:top_n",

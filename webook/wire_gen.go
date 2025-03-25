@@ -52,7 +52,10 @@ func InitWebServer() *App {
 	engine := ioc.InitWebServer(v, userHandler, oAuth2WechatHandler, articleHandler)
 	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(interactiveRepository, client, logger)
 	v2 := ioc.InitConsumers(interactiveReadEventConsumer)
-	rankingService := service.NewBatchRankingService(interactiveService, articleService)
+	localRankingCache := cache.NewRankingLocalCache()
+	redisRankingCache := cache.NewRedisRankingCache(cmdable)
+	rankingRepository := repository.NewCachedRankingRepository(localRankingCache, redisRankingCache)
+	rankingService := service.NewBatchRankingService(rankingRepository, interactiveService, articleService)
 	rlockClient := ioc.InitRlockClient(cmdable)
 	rankingJob := ioc.InitRankingJob(rankingService, rlockClient, logger)
 	cron := ioc.InitJobs(logger, rankingJob)
@@ -68,4 +71,4 @@ func InitWebServer() *App {
 
 var interactiveSet = wire.NewSet(dao.NewGORMInteractiveDAO, cache.NewRedisInteractiveCache, repository.NewCachedInteractiveRepository, service.NewInteractiveService)
 
-var rankingSvcSet = wire.NewSet(cache.NewRedisRankingCache, repository.NewCachedRankingRepository, service.NewBatchRankingService)
+var rankingSvcSet = wire.NewSet(cache.NewRankingLocalCache, cache.NewRedisRankingCache, repository.NewCachedRankingRepository, service.NewBatchRankingService)

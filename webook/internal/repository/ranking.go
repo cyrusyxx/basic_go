@@ -12,16 +12,15 @@ type RankingRepository interface {
 }
 
 type CachedRankingRepository struct {
-	cache cache.RankingCache
-
+	//cache cache.RankingCache
+	//
 	localCache *cache.LocalRankingCache
 	redisCache *cache.RedisRankingCache
 }
 
-func NewCachedRankingRepository(cache cache.RankingCache,
-	localCache *cache.LocalRankingCache, redisCache *cache.RedisRankingCache) RankingRepository {
+func NewCachedRankingRepository(localCache *cache.LocalRankingCache, redisCache *cache.RedisRankingCache) RankingRepository {
 	return &CachedRankingRepository{
-		cache:      cache,
+		//cache:      cache,
 		localCache: localCache,
 		redisCache: redisCache,
 	}
@@ -32,9 +31,9 @@ func (r *CachedRankingRepository) ReplaceTopN(ctx context.Context, artis []domai
 	return r.redisCache.Set(ctx, artis)
 }
 
-func (r *CachedRankingRepository) _unuse_GetTopN(ctx context.Context) ([]domain.Article, error) {
-	return r.cache.Get(ctx)
-}
+//func (r *CachedRankingRepository) _unuse_GetTopN(ctx context.Context) ([]domain.Article, error) {
+//	return r.cache.Get(ctx)
+//}
 
 func (r *CachedRankingRepository) GetTopN(ctx context.Context) ([]domain.Article, error) {
 	res, err := r.localCache.Get(ctx)

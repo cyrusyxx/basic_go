@@ -26,11 +26,12 @@ type BatchRankingService struct {
 	scoreFunc func(likeCnt int64, utime time.Time) float64
 }
 
-func NewBatchRankingService(interSvc InteractiveService,
+func NewBatchRankingService(repo repository.RankingRepository, interSvc InteractiveService,
 	artiSvc ArticleService) RankingService {
 	return &BatchRankingService{
 		interSvc:  interSvc,
 		artiSvc:   artiSvc,
+		repo:      repo,
 		batchSize: 100,
 		scoreFunc: func(likeCnt int64, utime time.Time) float64 {
 			dur := time.Since(utime).Seconds()

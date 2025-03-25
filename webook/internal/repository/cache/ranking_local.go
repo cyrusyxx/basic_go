@@ -3,9 +3,10 @@ package cache
 import (
 	"context"
 	"errors"
-	"github.com/ecodeclub/ekit/syncx/atomicx"
 	"time"
 	"webook/webook/internal/domain"
+
+	"github.com/ecodeclub/ekit/syncx/atomicx"
 )
 
 type LocalRankingCache struct {
@@ -14,8 +15,12 @@ type LocalRankingCache struct {
 	expiration time.Duration
 }
 
-func NewRankingLocalCache(expiration time.Duration) *LocalRankingCache {
-	return &LocalRankingCache{}
+func NewRankingLocalCache() *LocalRankingCache {
+	return &LocalRankingCache{
+		topN:       atomicx.NewValue[[]domain.Article](),
+		ddl:        atomicx.NewValue[time.Time](),
+		expiration: time.Minute,
+	}
 }
 
 func (r *LocalRankingCache) Set(ctx context.Context, artis []domain.Article) error {

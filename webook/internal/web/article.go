@@ -247,14 +247,13 @@ func (h *ArticleHandler) Like(ctx *gin.Context) {
 		Id   int64 `json:"id"`
 		Like bool  `json:"like"`
 	}
-
 	var req Req
+	var err error
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
-	var err error
+
 	if req.Like {
 		err = h.interSvc.Like(ctx, h.biz, req.Id, uc.Uid)
 	} else {
