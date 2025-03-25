@@ -59,6 +59,7 @@ func (s *ImplArticleService) Withdraw(ctx context.Context,
 
 func (s *ImplArticleService) GetByAuthor(ctx context.Context,
 	uid int64, offset int64, limit int64) ([]domain.Article, error) {
+
 	return s.repo.GetByAuthor(ctx, uid, offset, limit)
 }
 
@@ -68,6 +69,7 @@ func (s *ImplArticleService) GetById(ctx context.Context, id int64) (domain.Arti
 
 func (s *ImplArticleService) GetPubById(ctx context.Context,
 	uid, id int64) (domain.Article, error) {
+
 	res, err := s.repo.GetPubById(ctx, id)
 
 	go func() {
@@ -87,5 +89,6 @@ func (s *ImplArticleService) GetPubById(ctx context.Context,
 
 func (s *ImplArticleService) ListPub(ctx context.Context,
 	start time.Time, offset, limit int64) ([]domain.Article, error) {
+
 	return s.repo.ListPub(ctx, start, offset, limit)
 }

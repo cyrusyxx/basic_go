@@ -130,6 +130,7 @@ func (h *ArticleHandler) List(ctx *gin.Context) {
 		return
 	}
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+
 	artis, err := h.svc.GetByAuthor(ctx, uc.Uid, page.Offset, page.Limit)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
@@ -140,6 +141,7 @@ func (h *ArticleHandler) List(ctx *gin.Context) {
 		h.l.Error("Failed to get article list", logger.Error(err))
 		return
 	}
+
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: toAbstractVos(artis),
 	})

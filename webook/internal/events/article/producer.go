@@ -27,13 +27,16 @@ func NewSaramaSyncProducer(producer sarama.SyncProducer) Producer {
 }
 
 func (p *SaramaSyncProducer) ProducerReadEvent(evt ReadEvent) error {
+
 	val, err := json.Marshal(evt)
 	if err != nil {
 		return err
 	}
+
 	_, _, err = p.producer.SendMessage(&sarama.ProducerMessage{
 		Topic: TopicReadEvent,
 		Value: sarama.StringEncoder(val),
 	})
+
 	return err
 }

@@ -69,6 +69,7 @@ func NewGORMInteractiveDAO(db *gorm.DB) InteractiveDAO {
 
 func (d *GORMInteractiveDAO) IncreaseViewCount(ctx context.Context,
 	biz string, bizId int64) error {
+
 	now := time.Now().UnixMilli()
 	return d.db.WithContext(ctx).Clauses(clause.OnConflict{
 		DoUpdates: clause.Assignments(map[string]interface{}{

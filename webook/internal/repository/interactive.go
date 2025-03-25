@@ -37,10 +37,12 @@ func NewCachedInteractiveRepository(dao dao.InteractiveDAO,
 
 func (r *CachedInteractiveRepository) IncreaseViewCount(ctx context.Context,
 	biz string, bizId int64) error {
+
 	err := r.dao.IncreaseViewCount(ctx, biz, bizId)
 	if err != nil {
 		return err
 	}
+	
 	return r.cache.IncreaseViewCountIfPresent(ctx, biz, bizId)
 }
 
@@ -95,6 +97,7 @@ func (r *CachedInteractiveRepository) AddCollectionItem(ctx context.Context,
 
 func (r *CachedInteractiveRepository) Get(ctx context.Context,
 	biz string, id int64) (domain.InteractiveCount, error) {
+
 	c, err := r.cache.Get(ctx, biz, id)
 	if err == nil {
 		return c, nil
@@ -117,7 +120,9 @@ func (r *CachedInteractiveRepository) Get(ctx context.Context,
 
 func (r *CachedInteractiveRepository) Liked(ctx context.Context,
 	biz string, id int64, uid int64) (bool, error) {
+
 	_, err := r.dao.GetLikeInfo(ctx, biz, id, uid)
+
 	switch err {
 	case nil:
 		return true, nil

@@ -47,6 +47,7 @@ func (s *ImplInteractiveService) Collect(ctx context.Context,
 
 func (s *ImplInteractiveService) Get(ctx context.Context,
 	biz string, id int64, uid int64) (domain.InteractiveCount, error) {
+
 	inter, err := s.repo.Get(ctx, biz, id)
 	if err != nil {
 		return domain.InteractiveCount{}, err
