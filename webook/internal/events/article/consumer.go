@@ -25,7 +25,7 @@ func NewInteractiveReadEventConsumer(repo repository.InteractiveRepository,
 	}
 }
 
-func (i *InteractiveReadEventConsumer) StartVBatch() error {
+func (i *InteractiveReadEventConsumer) Start() error {
 	consumer, err := sarama.NewConsumerGroupFromClient("interactive", i.client)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (i *InteractiveReadEventConsumer) StartVBatch() error {
 	return err
 }
 
-func (i *InteractiveReadEventConsumer) Start() error {
+func (i *InteractiveReadEventConsumer) StartVSingle() error {
 	consumer, err := sarama.NewConsumerGroupFromClient("interactive", i.client)
 	if err != nil {
 		return err
