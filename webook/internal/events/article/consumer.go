@@ -65,15 +65,18 @@ func (i *InteractiveReadEventConsumer) Start_V_Sigle() error {
 	return err
 }
 
-func (i *InteractiveReadEventConsumer) Consume(msg *sarama.ConsumerMessage,
-	event ReadEvent) error {
+func (i *InteractiveReadEventConsumer) Consume(
+	msg *sarama.ConsumerMessage, event ReadEvent) error {
+
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
+
 	return i.repo.IncreaseViewCount(ctx, "article", event.Aid)
 }
 
-func (i *InteractiveReadEventConsumer) BatchConsume(msgs []*sarama.ConsumerMessage,
-	ts []ReadEvent) error {
+func (i *InteractiveReadEventConsumer) BatchConsume(
+	msgs []*sarama.ConsumerMessage, ts []ReadEvent) error {
+
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -83,5 +86,6 @@ func (i *InteractiveReadEventConsumer) BatchConsume(msgs []*sarama.ConsumerMessa
 		bizs = append(bizs, "article")
 		bizIds = append(bizIds, t.Aid)
 	}
+
 	return i.repo.IncreaseViewCountBatch(ctx, bizs, bizIds)
 }
