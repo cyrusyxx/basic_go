@@ -76,20 +76,34 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	// Check the email pattern
 	isEmail, err := h.emailRegExp.MatchString(req.Email)
 	if err != nil {
-		ctx.String(http.StatusOK, "Email input failed\n")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "邮箱格式校验失败",
+		})
+		return
 	}
 	if !isEmail {
-		ctx.String(http.StatusOK, "Email pattern is wrong\n")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "邮箱格式不对",
+		})
 		return
 	}
 
 	// Check the keyword pattern
 	isPassword, err := h.passwordRegex.MatchString(req.Password)
 	if err != nil {
-		ctx.String(http.StatusOK, "Password input failed\n")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "密码格式校验失败",
+		})
+		return
 	}
 	if !isPassword {
-		ctx.String(http.StatusOK, "Password pattern is wrong\n")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "密码格式不对",
+		})
 		return
 	}
 
@@ -102,12 +116,20 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	// Check the error
 	switch err {
 	case nil:
-		// Success:Return the string to browser
-		ctx.String(http.StatusOK, "HELLO ITS IN SIGNUP")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 0,
+			Msg:  "Sign up Success!!",
+		})
 	case service.ErrDuplicateUser:
-		ctx.String(http.StatusOK, "Email Duplicate !!")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "User already exists",
+		})
 	default:
-		ctx.String(http.StatusOK, "System Error !!")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System Error!!",
+		})
 	}
 }
 
@@ -167,15 +189,23 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	// OK
 	case nil:
 		h.SetJWTToken(ctx, u.Id)
-		ctx.String(http.StatusOK, "Login Success!!")
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "Login Success!!",
+		})
 
 	// Error password or user not found
 	case service.ErrInvalidUserOrPassword:
-		ctx.String(http.StatusOK, "User not found or password is wrong")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "User not found or password is wrong",
+		})
 
 	// Other error
 	default:
-		ctx.String(http.StatusOK, "System Error!!")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System Error!!",
+		})
 	}
 
 }
