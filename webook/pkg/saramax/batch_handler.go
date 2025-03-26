@@ -26,8 +26,8 @@ func (h *BatchHandler[T]) Cleanup(session sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-func (h *BatchHandler[T]) ConsumeClaim(session sarama.ConsumerGroupSession,
-	claim sarama.ConsumerGroupClaim) error {
+func (h *BatchHandler[T]) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+
 	msgs := claim.Messages()
 	ts := make([]T, 0, 10)
 	const batchSize = 10

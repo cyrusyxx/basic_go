@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/repository/cache"
 	"webook/webook/internal/repository/dao"
@@ -42,19 +43,25 @@ func (r *CachedInteractiveRepository) IncreaseViewCount(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	
+
 	return r.cache.IncreaseViewCountIfPresent(ctx, biz, bizId)
 }
 
 func (r *CachedInteractiveRepository) IncreaseViewCountBatch(ctx context.Context,
 	bizs []string, bizIds []int64) error {
+
 	err := r.dao.IncreaseViewCountBatch(ctx, bizs, bizIds)
 	if err != nil {
 		return err
 	}
+
 	go func() {
+		newCtx := context.Background()
+		ctxTimeout, cancel := context.WithTimeout(newCtx, 5*time.Second)
+		defer cancel()
+
 		for i := range bizs {
-			er := r.cache.IncreaseViewCountIfPresent(ctx, bizs[i], bizIds[i])
+			er := r.cache.IncreaseViewCountIfPresent(ctxTimeout, bizs[i], bizIds[i])
 			if er != nil {
 				r.l.Error("Failed to increase view count Cache",
 					logger.Error(er),
@@ -64,6 +71,7 @@ func (r *CachedInteractiveRepository) IncreaseViewCountBatch(ctx context.Context
 			}
 		}
 	}()
+
 	return nil
 }
 

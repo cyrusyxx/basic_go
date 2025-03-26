@@ -29,6 +29,7 @@ func (h *Handler[T]) ConsumeClaim(session sarama.ConsumerGroupSession, claim sar
 	msgs := claim.Messages()
 	for msg := range msgs {
 		var t T
+
 		// Unmarshal the message
 		err := json.Unmarshal(msg.Value, &t)
 		if err != nil {
@@ -54,5 +55,6 @@ func (h *Handler[T]) ConsumeClaim(session sarama.ConsumerGroupSession, claim sar
 
 		session.MarkMessage(msg, "")
 	}
+
 	return nil
 }
