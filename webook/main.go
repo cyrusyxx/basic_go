@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"webook/webook/config"
+	"webook/webook/ioc"
 )
 
 //none
@@ -15,6 +16,11 @@ func main() {
 	initLogger()
 	app := InitWebServer()
 	initPrometheus()
+
+	// kafka health
+	if err := ioc.KafkaHealthCheck([]string{"cyruss.cn:9092"}); err != nil {
+		panic(err)
+	}
 
 	// Start consumers
 	for _, c := range app.consumers {
