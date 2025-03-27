@@ -13,6 +13,16 @@ type Article struct {
 	Utime time.Time
 }
 
+type ArticleList []Article
+
+func (a ArticleList) Ids() []int64 {
+	ids := make([]int64, len(a))
+	for i, article := range a {
+		ids[i] = article.Id
+	}
+	return ids
+}
+
 func (a Article) Abstract() string {
 	str := []rune(a.Content)
 	if len(str) > 100 {

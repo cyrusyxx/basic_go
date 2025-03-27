@@ -174,9 +174,11 @@ func (d *GORMArticleDAO) ListPub(ctx context.Context,
 	start time.Time, offset int64, limit int64) ([]Article, error) {
 	var artis []Article
 	err := d.db.WithContext(ctx).
+		Model(&PublicArticle{}).
 		Where("status = ? AND utime < ?",
 			domain.ArticleStatusPublished, start.UnixMilli()).
-		Offset(int(offset)).Limit(int(limit)).
+		Offset(int(offset)).
+		Limit(int(limit)).
 		Find(&artis).Error
 	return artis, err
 }

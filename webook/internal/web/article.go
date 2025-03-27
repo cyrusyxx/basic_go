@@ -52,6 +52,7 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g.GET("/pub/:id", h.PubDetail)
 	g.POST("/pub/like", h.Like)
 	g.POST("/pub/collect", h.Collect)
+	g.POST("/pub/list", h.PubList)
 }
 
 func (h *ArticleHandler) Edit(ctx *gin.Context, req EditReq, uc ijwt.UserClaims) (ginx.Result, error) {
@@ -143,7 +144,7 @@ func (h *ArticleHandler) List(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, ginx.Result{
-		Data: toAbstractVos(artis),
+		Data: toAbstractVos(artis, make(map[int64]domain.InteractiveCount)),
 	})
 }
 
@@ -242,6 +243,48 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 	})
 }
 
+func (h *ArticleHandler) PubList(ctx *gin.Context) {
+	// Get offset and limit from query
+	var page Page
+	if err := ctx.Bind(&page); err != nil {
+		return
+	}
+
+	var (
+		artis    []domain.Article
+		interMap map[int64]domain.InteractiveCount
+	)
+
+	artis, err := h.svc.ListPub(ctx, time.Now(), page.Offset, page.Limit)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 5,
+			Msg:  "System Error",
+			Data: nil,
+		})
+		h.l.Error("Failed to get article", logger.Error(err))
+		return
+	}
+
+	interMap, err = h.interSvc.GetByIds(ctx, h.biz, domain.ArticleList(artis).Ids())
+
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 5,
+			Msg:  "System Error",
+			Data: nil,
+		})
+		h.l.Error("Failed to get article", logger.Error(err))
+		return
+	}
+
+	// Return article
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Data: toAbstractVos(artis, interMap),
+		Msg:  "OK",
+	})
+}
+
 func (h *ArticleHandler) Like(ctx *gin.Context) {
 	type Req struct {
 		Id   int64 `json:"id"`
@@ -308,10 +351,15 @@ func toContentVo(articles domain.Article, inter domain.InteractiveCount) Article
 	return _tovo(articles, inter, false)
 }
 
-func toAbstractVos(articles []domain.Article) []ArticleVo {
+func toAbstractVos(articles []domain.Article, interMap map[int64]domain.InteractiveCount) []ArticleVo {
 	var vos []ArticleVo
+
 	for _, article := range articles {
-		vos = append(vos, _tovo(article, domain.InteractiveCount{}, true))
+		inter, ok := interMap[article.Id]
+		if !ok {
+			inter = domain.InteractiveCount{}
+		}
+		vos = append(vos, _tovo(article, inter, true))
 	}
 	return vos
 }
