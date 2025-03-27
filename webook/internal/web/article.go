@@ -259,6 +259,7 @@ func (h *ArticleHandler) Like(ctx *gin.Context) {
 	} else {
 		err = h.interSvc.CancelLike(ctx, h.biz, req.Id, uc.Uid)
 	}
+
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,
@@ -267,6 +268,7 @@ func (h *ArticleHandler) Like(ctx *gin.Context) {
 		h.l.Error("Failed to like article", logger.Error(err))
 		return
 	}
+
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "OK",
 	})
