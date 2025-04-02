@@ -156,14 +156,26 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		})
 		err := sess.Save()
 		if err != nil {
-			ctx.String(http.StatusOK, "System Error!!")
+			ctx.JSON(http.StatusOK, Result{
+				Code: 5,
+				Msg:  "System Error!!",
+			})
 			return
 		}
-		ctx.String(http.StatusOK, "Login Success!!")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 0,
+			Msg:  "Login Success!!",
+		})
 	case service.ErrInvalidUserOrPassword:
-		ctx.String(http.StatusOK, "User not found or password is wrong")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "User not found or password is wrong",
+		})
 	default:
-		ctx.String(http.StatusOK, "System Error!!")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System Error!!",
+		})
 	}
 }
 
@@ -211,7 +223,6 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "Hello form edit\n")
 	type EditReq struct {
 		NickName    string `json:"nickname"`
 		Birthday    string `json:"birthday"`
@@ -219,25 +230,30 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 	var req EditReq
 
-	//sess := sessions.Default(ctx)
-	//uid := sess.Get("userId").(int64)
-	//ctx.String(http.StatusOK, "uid is %d", uid)
-
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
 
 	// Verify the length of the input
 	if len(req.NickName) > 8 {
-		ctx.String(http.StatusOK, "Invalid nickname length")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Invalid nickname length",
+		})
 		return
 	}
 	if len(req.Birthday) != 10 {
-		ctx.String(http.StatusOK, "Invalid birthday length")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Invalid birthday length",
+		})
 		return
 	}
 	if len(req.Description) > 50 {
-		ctx.String(http.StatusOK, "Invalid description length")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Invalid description length",
+		})
 		return
 	}
 
@@ -245,7 +261,10 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	tokenstr := ctx.GetHeader("Authorization")
 	segs := strings.Split(tokenstr, " ")
 	if len(segs) != 2 {
-		ctx.String(http.StatusOK, "Token is invalid\n")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Token is invalid",
+		})
 		return
 	}
 	tokenstr = segs[1]
@@ -254,14 +273,20 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 			return ijwt.SigKey, nil
 		})
 	if err != nil {
-		ctx.String(http.StatusOK, "%s", err)
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  err.Error(),
+		})
 		return
 	}
 
 	// Get the user id from the token
 	uc, ok := token.Claims.(*ijwt.UserClaims)
 	if !ok || !token.Valid {
-		ctx.String(http.StatusOK, "Token is invalid\n")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Token is invalid",
+		})
 		return
 	}
 
@@ -269,21 +294,28 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	uid := uc.Uid
 	err = h.usersvc.Edit(ctx, uid, req.NickName, req.Birthday, req.Description)
 	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System Error!!",
+		})
 		return
 	}
+	
+	ctx.JSON(http.StatusOK, Result{
+		Code: 0,
+		Msg:  "Edit profile success",
+	})
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
-	//ctx.String(http.StatusOK, "Hello form profile/n")
-
-	//sess := sessions.Default(ctx)
-	//uid := sess.Get("userId").(int64)
-
 	// Get the user id from the token
 	tokenstr := ctx.GetHeader("Authorization")
 	segs := strings.Split(tokenstr, " ")
 	if len(segs) != 2 {
-		ctx.String(http.StatusOK, "Token is invalid\n")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Token is invalid",
+		})
 		return
 	}
 	tokenstr = segs[1]
@@ -292,25 +324,32 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 			return ijwt.SigKey, nil
 		})
 	if err != nil {
-		ctx.String(http.StatusOK, "%s", err)
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  err.Error(),
+		})
 		return
 	}
 
 	// Get the user id from the token
 	uc, ok := token.Claims.(*ijwt.UserClaims)
 	if !ok || !token.Valid {
-		ctx.String(http.StatusOK, "Token is invalid\n")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "Token is invalid",
+		})
 		return
 	}
 
 	uid := uc.Uid
 	u, err := h.usersvc.Profile(ctx, uid)
 	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System Error!!",
+		})
 		return
 	}
-
-	//response := fmt.Sprintf("id=%d\nEmail=%s\nNickName=%s\nBirthday=%s\nDescription=%s\n",
-	//	u.Id, u.Email, u.NickName, u.Birthday, u.Description)
 
 	// 返回用户信息
 	ctx.JSON(http.StatusOK, Result{
@@ -323,7 +362,6 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 			Description: u.Description,
 		},
 	})
-	//ctx.String(http.StatusOK, response)
 }
 
 func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
@@ -439,5 +477,8 @@ func (h *UserHandler) LogoutJWT(ctx *gin.Context) {
 		})
 		return
 	}
-	ctx.String(http.StatusOK, "Logout success")
+	ctx.JSON(http.StatusOK, Result{
+		Code: 0,
+		Msg:  "Logout success",
+	})
 }
