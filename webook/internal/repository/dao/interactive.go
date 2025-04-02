@@ -2,9 +2,10 @@ package dao
 
 import (
 	"context"
+	"time"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
 type InteractiveDAO interface {
@@ -222,6 +223,6 @@ func (d *GORMInteractiveDAO) GetByIds(ctx context.Context,
 	var counts []InteractiveCount
 	err := d.db.WithContext(ctx).
 		Where("biz = ? AND biz_id IN ?", biz, ids).
-		First(&counts).Error
+		Find(&counts).Error
 	return counts, err
 }
