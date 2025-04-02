@@ -234,11 +234,13 @@ func (r *CachedArticleRepository) toDomain(arti dao.Article) domain.Article {
 		Id:      arti.Id,
 		Title:   arti.Title,
 		Content: arti.Content,
-		Author:  domain.Author{Id: arti.AuthorId},
-		Status:  domain.ArticleStatus(arti.Status),
-
-		Ctime: time.UnixMilli(arti.Ctime),
-		Utime: time.UnixMilli(arti.Utime),
+		Author: domain.Author{
+			Id:   arti.AuthorId,
+			Name: arti.AuthorName,
+		},
+		Status: domain.ArticleStatus(arti.Status),
+		Ctime:  time.UnixMilli(arti.Ctime),
+		Utime:  time.UnixMilli(arti.Utime),
 	}
 }
 

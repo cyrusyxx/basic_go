@@ -11,11 +11,12 @@ import (
 )
 
 type Article struct {
-	Id       int64  `gorm:"primaryKey;autoIncrement" bson:"id,omitempty"`
-	Title    string `gorm:"type:varchar(256)" bson:"title,omitempty"`
-	Content  string `gorm:"type:longtext" bson:"content,omitempty"`
-	AuthorId int64  `gorm:"index" bson:"author_id,omitempty"`
-	Status   uint8  `bson:"status,omitempty"`
+	Id         int64  `gorm:"primaryKey;autoIncrement" bson:"id,omitempty"`
+	Title      string `gorm:"type:varchar(256)" bson:"title,omitempty"`
+	Content    string `gorm:"type:longtext" bson:"content,omitempty"`
+	AuthorId   int64  `gorm:"index" bson:"author_id,omitempty"`
+	Status     uint8  `bson:"status,omitempty"`
+	AuthorName string `gorm:"column:author_name;type:varchar(128)" bson:"author_name,omitempty"`
 
 	Ctime int64 `bson:"ctime,omitempty"`
 	Utime int64 `bson:"utime,omitempty"`
@@ -181,8 +182,10 @@ func (d *GORMArticleDAO) ListPub(ctx context.Context,
 	start time.Time, offset int64, limit int64) ([]Article, error) {
 	var artis []Article
 	err := d.db.WithContext(ctx).
-		Model(&PublicArticle{}).
-		Where("status = ? AND utime < ?",
+		Table("public_articles").
+		Select("public_articles.*, users.nick_name as author_name").
+		Joins("LEFT JOIN users ON public_articles.author_id = users.id").
+		Where("public_articles.status = ? AND public_articles.utime < ?",
 			domain.ArticleStatusPublished, start.UnixMilli()).
 		Offset(int(offset)).
 		Limit(int(limit)).
