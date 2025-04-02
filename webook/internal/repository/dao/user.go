@@ -61,7 +61,7 @@ func (dao *GORMUserDAO) Edit(ctx context.Context, u User) error {
 	fu.Birthday = u.Birthday
 	fu.Description = u.Description
 
-	err = dao.db.Save(fu).Error
+	err = dao.db.Save(&fu).Error
 	if err != nil {
 		return err
 	}
