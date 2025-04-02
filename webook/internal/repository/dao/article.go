@@ -3,10 +3,11 @@ package dao
 import (
 	"context"
 	"errors"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"time"
 	"webook/webook/internal/domain"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Article struct {
@@ -92,9 +93,15 @@ func (d *GORMArticleDAO) Sync(ctx context.Context, arti Article) (int64, error) 
 	}
 
 	arti.Id = id
-	pubArti := PublicArticle(arti)
-	pubArti.Ctime = time.Now().UnixMilli()
-	pubArti.Utime = time.Now().UnixMilli()
+	pubArti := &PublicArticle{
+		Id:       arti.Id,
+		Title:    arti.Title,
+		Content:  arti.Content,
+		AuthorId: arti.AuthorId,
+		Status:   arti.Status,
+		Ctime:    time.Now().UnixMilli(),
+		Utime:    time.Now().UnixMilli(),
+	}
 	err = tx.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
