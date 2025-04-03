@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"strconv"
 	"webook/webook/constants"
@@ -76,6 +77,9 @@ func (c *RedisInteractiveCache) DecreaseCollectCntIfPresent(ctx context.Context,
 func (c *RedisInteractiveCache) Get(ctx context.Context,
 	biz string, id int64) (domain.InteractiveCount, error) {
 	res, err := c.client.HGetAll(ctx, key(biz, id)).Result()
+	if len(res) == 0 {
+		return domain.InteractiveCount{}, errors.New("not found")
+	}
 	if err != nil {
 		return domain.InteractiveCount{}, err
 	}
