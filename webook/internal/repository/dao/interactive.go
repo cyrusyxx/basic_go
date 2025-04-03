@@ -14,6 +14,7 @@ type InteractiveDAO interface {
 	InsertLikeInfo(ctx context.Context, biz string, id int64, uid int64) error
 	DeleteLikeInfo(ctx context.Context, biz string, id int64, uid int64) error
 	InsertCollectionBiz(ctx context.Context, biz string, id int64, cid int64, uid int64) error
+	DeleteCollectionBiz(ctx context.Context, biz string, id int64, uid int64) error
 	GetLikeInfo(ctx context.Context, biz string, id int64, uid int64) (UserLikeBiz, error)
 	GetCollectInfo(ctx context.Context, biz string, id int64, uid int64) (UserCollectionBiz, error)
 	Get(ctx context.Context, biz string, id int64) (InteractiveCount, error)
@@ -184,6 +185,24 @@ func (d *GORMInteractiveDAO) InsertCollectionBiz(ctx context.Context,
 			Ctime:      now,
 			Utime:      now,
 		}).Error
+	})
+}
+
+func (d *GORMInteractiveDAO) DeleteCollectionBiz(ctx context.Context,
+	biz string, id int64, uid int64) error {
+	now := time.Now().UnixMilli()
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Where("uid = ? AND biz = ? AND biz_id = ?", uid, biz, id).
+			Delete(&UserCollectionBiz{}).Error
+		if err != nil {
+			return err
+		}
+		return tx.Model(&InteractiveCount{}).
+			Where("biz = ? AND biz_id = ?", biz, id).
+			Updates(map[string]interface{}{
+				"collect_cnt": gorm.Expr("collect_cnt - 1"),
+				"utime":       now,
+			}).Error
 	})
 }
 

@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"webook/webook/internal/domain"
 	"webook/webook/internal/repository"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type InteractiveService interface {
@@ -12,6 +13,7 @@ type InteractiveService interface {
 	Like(ctx context.Context, biz string, id int64, uid int64) error
 	CancelLike(ctx context.Context, biz string, id int64, uid int64) error
 	Collect(ctx context.Context, biz string, id int64, cid int64, uid int64) error
+	CancelCollect(ctx context.Context, biz string, id int64, uid int64) error
 	Get(ctx context.Context, biz string, id int64, uid int64) (domain.InteractiveCount, error)
 	GetByIds(ctx context.Context, biz string, ids []int64) (map[int64]domain.InteractiveCount, error)
 }
@@ -43,6 +45,11 @@ func (s *ImplInteractiveService) CancelLike(ctx context.Context,
 func (s *ImplInteractiveService) Collect(ctx context.Context,
 	biz string, id int64, cid int64, uid int64) error {
 	return s.repo.AddCollectionItem(ctx, biz, id, cid, uid)
+}
+
+func (s *ImplInteractiveService) CancelCollect(ctx context.Context,
+	biz string, id int64, uid int64) error {
+	return s.repo.DeleteCollectionItem(ctx, biz, id, uid)
 }
 
 func (s *ImplInteractiveService) Get(ctx context.Context,

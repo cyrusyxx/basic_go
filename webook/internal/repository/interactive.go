@@ -15,6 +15,7 @@ type InteractiveRepository interface {
 	IncreaseLike(ctx context.Context, biz string, id int64, uid int64) error
 	DecreaseLike(ctx context.Context, biz string, id int64, uid int64) error
 	AddCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
+	DeleteCollectionItem(ctx context.Context, biz string, id int64, uid int64) error
 	Get(ctx context.Context, biz string, id int64) (domain.InteractiveCount, error)
 	Liked(ctx context.Context, biz string, id int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, id int64, uid int64) (bool, error)
@@ -101,6 +102,15 @@ func (r *CachedInteractiveRepository) AddCollectionItem(ctx context.Context,
 	}
 	return r.cache.IncreaseCollectCntIfPresent(ctx, biz, id)
 
+}
+
+func (r *CachedInteractiveRepository) DeleteCollectionItem(ctx context.Context,
+	biz string, id int64, uid int64) error {
+	err := r.dao.DeleteCollectionBiz(ctx, biz, id, uid)
+	if err != nil {
+		return err
+	}
+	return r.cache.DecreaseCollectCntIfPresent(ctx, biz, id)
 }
 
 func (r *CachedInteractiveRepository) Get(ctx context.Context,

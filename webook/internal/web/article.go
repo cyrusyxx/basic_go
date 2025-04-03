@@ -328,6 +328,8 @@ func (h *ArticleHandler) Collect(ctx *gin.Context) {
 		Id int64 `json:"id"`
 		// Collections ID
 		Cid int64 `json:"cid"`
+		// true: 收藏, false: 取消收藏
+		Collect bool `json:"collect"`
 	}
 	var req Req
 	if err := ctx.Bind(&req); err != nil {
@@ -335,7 +337,14 @@ func (h *ArticleHandler) Collect(ctx *gin.Context) {
 	}
 
 	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
-	err := h.interSvc.Collect(ctx, h.biz, req.Id, req.Cid, uc.Uid)
+
+	var err error
+	if req.Collect {
+		err = h.interSvc.Collect(ctx, h.biz, req.Id, req.Cid, uc.Uid)
+	} else {
+		err = h.interSvc.CancelCollect(ctx, h.biz, req.Id, uc.Uid)
+	}
+
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,

@@ -16,6 +16,7 @@ type InteractiveCache interface {
 	IncreaseLikeIfPresent(ctx context.Context, biz string, id int64) error
 	DecreaseLikeIfPresent(ctx context.Context, biz string, id int64) error
 	IncreaseCollectCntIfPresent(ctx context.Context, biz string, id int64) error
+	DecreaseCollectCntIfPresent(ctx context.Context, biz string, id int64) error
 	Get(ctx context.Context, biz string, id int64) (domain.InteractiveCount, error)
 	Set(ctx context.Context, biz string, id int64, res domain.InteractiveCount) error
 }
@@ -64,6 +65,12 @@ func (c *RedisInteractiveCache) IncreaseCollectCntIfPresent(ctx context.Context,
 	biz string, id int64) error {
 	key := key(biz, id)
 	return c.client.Eval(ctx, luaIncrCnt, []string{key}, fieldCollectCnt, +1).Err()
+}
+
+func (c *RedisInteractiveCache) DecreaseCollectCntIfPresent(ctx context.Context,
+	biz string, id int64) error {
+	key := key(biz, id)
+	return c.client.Eval(ctx, luaIncrCnt, []string{key}, fieldCollectCnt, -1).Err()
 }
 
 func (c *RedisInteractiveCache) Get(ctx context.Context,
