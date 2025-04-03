@@ -69,7 +69,7 @@ func (s *ImplInteractiveService) Get(ctx context.Context,
 
 	eg.Go(func() error {
 		var er error
-		inter.Liked, er = s.repo.Collected(ctx, biz, id, uid)
+		inter.Collected, er = s.repo.Collected(ctx, biz, id, uid)
 		return er
 	})
 
