@@ -71,14 +71,17 @@ func (s *ImplInteractiveService) Get(ctx context.Context,
 
 func (s *ImplInteractiveService) GetByIds(ctx context.Context,
 	biz string, ids []int64) (map[int64]domain.InteractiveCount, error) {
+
 	inters, err := s.repo.GetByIds(ctx, biz, ids)
 	if err != nil {
 		return nil, err
 	}
+
+	// map[articleId]InteractiveCount
 	res := make(map[int64]domain.InteractiveCount, len(inters))
 	for _, inter := range inters {
-		// TODO: why BizId
 		res[inter.BizId] = inter
 	}
+
 	return res, nil
 }
