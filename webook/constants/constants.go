@@ -13,6 +13,6 @@ var (
 	JwtExpireTime          = 100 * time.Hour
 	JwtRefreshExpireTime   = 7 * 24 * time.Hour
 	CheckLoginExpireTime   = 30 * time.Minute
-	UserCacheExpireTime    = 15 * time.Minute
-	InteractiveCacheExpire = 15 * time.Minute
+	UserCacheExpireTime    = 1 * time.Minute
+	InteractiveCacheExpire = 1 * time.Minute
 )
