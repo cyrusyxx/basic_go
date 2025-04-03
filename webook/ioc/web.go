@@ -2,11 +2,6 @@ package ioc
 
 import (
 	"context"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redis/go-redis/v9"
-	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"webook/webook/constants"
 	"webook/webook/internal/web"
 	ijwt "webook/webook/internal/web/jwt"
@@ -16,6 +11,12 @@ import (
 	"webook/webook/pkg/ginx/middleware/ratelimit"
 	"webook/webook/pkg/limiter"
 	"webook/webook/pkg/logger"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redis/go-redis/v9"
+	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 func InitWebServer(middlewareFuncs []gin.HandlerFunc,

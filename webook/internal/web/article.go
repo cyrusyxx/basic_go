@@ -2,8 +2,6 @@ package web
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"golang.org/x/sync/errgroup"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,11 +11,15 @@ import (
 	ijwt "webook/webook/internal/web/jwt"
 	"webook/webook/pkg/ginx"
 	"webook/webook/pkg/logger"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 )
 
 type ArticleHandler struct {
 	svc      service.ArticleService
 	interSvc service.InteractiveService
+	rankSvc  service.RankingService
 
 	l   logger.Logger
 	biz string
@@ -30,10 +32,12 @@ type Page struct {
 
 func NewArticleHandler(l logger.Logger,
 	svc service.ArticleService,
-	intersvc service.InteractiveService) *ArticleHandler {
+	intersvc service.InteractiveService,
+	ranksvc service.RankingService) *ArticleHandler {
 	return &ArticleHandler{
 		svc:      svc,
 		interSvc: intersvc,
+		rankSvc:  ranksvc,
 		l:        l,
 		biz:      "article",
 	}
@@ -53,6 +57,8 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g.POST("/pub/like", h.Like)
 	g.POST("/pub/collect", h.Collect)
 	g.POST("/pub/list", h.PubList)
+
+	g.GET("/pub/top", h.Top)
 }
 
 func (h *ArticleHandler) Edit(ctx *gin.Context, req EditReq, uc ijwt.UserClaims) (ginx.Result, error) {
@@ -340,6 +346,52 @@ func (h *ArticleHandler) Collect(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "OK",
+	})
+}
+
+func (h *ArticleHandler) Top(ctx *gin.Context) {
+	// 获取排行榜文章
+	articles, err := h.rankSvc.GetTopN(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 5,
+			Msg:  "System Error",
+			Data: nil,
+		})
+		h.l.Error("Failed to get top articles", logger.Error(err))
+		return
+	}
+
+	if len(articles) == 0 {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Data: []domain.Article{},
+			Msg:  "OK",
+		})
+		return
+	}
+
+	// 获取文章ID列表
+	var articleIds []int64
+	for _, article := range articles {
+		articleIds = append(articleIds, article.Id)
+	}
+
+	// 获取互动数据
+	interMap, err := h.interSvc.GetByIds(ctx, h.biz, articleIds)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 5,
+			Msg:  "System Error",
+			Data: nil,
+		})
+		h.l.Error("Failed to get interactive data", logger.Error(err))
+		return
+	}
+
+	// 返回文章列表
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Data: toAbstractVos(articles, interMap),
+		Msg:  "OK",
 	})
 }
 
