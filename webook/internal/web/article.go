@@ -17,9 +17,10 @@ import (
 )
 
 type ArticleHandler struct {
-	svc      service.ArticleService
-	interSvc service.InteractiveService
-	rankSvc  service.RankingService
+	svc        service.ArticleService
+	interSvc   service.InteractiveService
+	rankSvc    service.RankingService
+	commentSvc service.CommentService
 
 	l   logger.Logger
 	biz string
@@ -30,16 +31,22 @@ type Page struct {
 	Offset int64
 }
 
+type CreateCommentReq struct {
+	Content string `json:"content"`
+}
+
 func NewArticleHandler(l logger.Logger,
 	svc service.ArticleService,
 	intersvc service.InteractiveService,
-	ranksvc service.RankingService) *ArticleHandler {
+	ranksvc service.RankingService,
+	commentSvc service.CommentService) *ArticleHandler {
 	return &ArticleHandler{
-		svc:      svc,
-		interSvc: intersvc,
-		rankSvc:  ranksvc,
-		l:        l,
-		biz:      "article",
+		svc:        svc,
+		interSvc:   intersvc,
+		rankSvc:    ranksvc,
+		commentSvc: commentSvc,
+		l:          l,
+		biz:        "article",
 	}
 }
 
@@ -59,6 +66,11 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g.POST("/pub/list", h.PubList)
 
 	g.GET("/pub/top", h.Top)
+
+	// 评论相关路由
+	g.POST("/:id/comment", h.CreateComment)
+	g.GET("/:id/comments", h.ListComments)
+	g.POST("/:id/comment/:commentId/delete", h.DeleteComment)
 }
 
 func (h *ArticleHandler) Edit(ctx *gin.Context, req EditReq, uc ijwt.UserClaims) (ginx.Result, error) {
@@ -460,4 +472,100 @@ func _tovo(article domain.Article, inter domain.InteractiveCount, isAbstract boo
 		vo.Content = article.Content
 	}
 	return vo
+}
+
+func (h *ArticleHandler) CreateComment(ctx *gin.Context) {
+	articleIdStr := ctx.Param("id")
+	articleId, err := strconv.ParseInt(articleIdStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 4,
+			Msg:  "参数错误",
+		})
+		return
+	}
+
+	var req CreateCommentReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+	id, err := h.commentSvc.Create(ctx, domain.Comment{
+		Content:   req.Content,
+		ArticleId: articleId,
+		User: domain.User{
+			Id: uc.Uid,
+		},
+	})
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		h.l.Error("创建评论失败", logger.Error(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Data: id,
+	})
+}
+
+func (h *ArticleHandler) ListComments(ctx *gin.Context) {
+	articleIdStr := ctx.Param("id")
+	articleId, err := strconv.ParseInt(articleIdStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 4,
+			Msg:  "参数错误",
+		})
+		return
+	}
+
+	var page Page
+	if err := ctx.Bind(&page); err != nil {
+		return
+	}
+
+	comments, err := h.commentSvc.GetByArticleId(ctx, articleId, page.Offset, page.Limit)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		h.l.Error("获取评论列表失败", logger.Error(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Data: comments,
+	})
+}
+
+func (h *ArticleHandler) DeleteComment(ctx *gin.Context) {
+	commentIdStr := ctx.Param("commentId")
+	commentId, err := strconv.ParseInt(commentIdStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 4,
+			Msg:  "参数错误",
+		})
+		return
+	}
+
+	uc := ctx.MustGet("userclaim").(ijwt.UserClaims)
+	err = h.commentSvc.DeleteById(ctx, commentId, uc.Uid)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		h.l.Error("删除评论失败", logger.Error(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Msg: "OK",
+	})
 }

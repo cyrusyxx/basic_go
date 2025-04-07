@@ -22,12 +22,12 @@ type ArticleService interface {
 type ImplArticleService struct {
 	repo     repository.ArticleRepository
 	producer article.Producer
-
-	l logger.Logger
+	l        logger.Logger
 }
 
 func NewImplArticleService(repo repository.ArticleRepository,
-	producer article.Producer, l logger.Logger) ArticleService {
+	producer article.Producer,
+	l logger.Logger) ArticleService {
 	return &ImplArticleService{
 		repo:     repo,
 		producer: producer,

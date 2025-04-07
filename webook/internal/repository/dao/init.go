@@ -2,11 +2,12 @@ package dao
 
 import (
 	"context"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/gorm"
-	"time"
 )
 
 func InitTables(db *gorm.DB) error {
@@ -17,6 +18,7 @@ func InitTables(db *gorm.DB) error {
 		&InteractiveCount{},
 		&UserLikeBiz{},
 		&UserCollectionBiz{},
+		&Comment{},
 	)
 }
 

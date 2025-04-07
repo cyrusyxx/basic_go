@@ -49,6 +49,7 @@ func InitWebServer() *App {
 
 		dao.NewGORMUserDAO,
 		dao.NewGORMArticleDAO,
+		dao.NewGORMCommentDAO,
 
 		cache.NewRedisUserCache,
 		cache.NewRedisCodeCache,
@@ -57,12 +58,14 @@ func InitWebServer() *App {
 		repository.NewCachedUserRepository,
 		repository.NewCachedCodeRepository,
 		repository.NewCachedArticleRepository,
+		repository.NewCommentRepo,
 
 		ioc.InitSMSService,
 		ioc.InitWechatService,
 		service.NewCachedCodeService,
 		service.NewCachedUserService,
 		service.NewImplArticleService,
+		service.NewCommentServiceImpl,
 
 		ijwt.NewRedisJWTHandler,
 		web.NewUserHandler,
