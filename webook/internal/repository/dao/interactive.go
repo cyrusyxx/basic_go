@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -228,12 +229,22 @@ func (d *GORMInteractiveDAO) GetCollectInfo(ctx context.Context,
 	return collect, err
 }
 
-func (d *GORMInteractiveDAO) Get(ctx context.Context, biz string, id int64) (InteractiveCount, error) {
+func (d *GORMInteractiveDAO) Get(ctx context.Context,
+	biz string, id int64) (InteractiveCount, error) {
+
 	var count InteractiveCount
 	err := d.db.
 		WithContext(ctx).
 		Where("biz = ? AND biz_id = ?", biz, id).
 		First(&count).Error
+
+	// 如果记录不存在，返回空值
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		count.BizId = id
+		count.Biz = biz
+		return count, nil
+	}
+
 	return count, err
 }
 
