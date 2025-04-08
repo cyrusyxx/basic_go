@@ -518,17 +518,30 @@ func (h *ArticleHandler) ListComments(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 4,
-			Msg:  "参数错误",
+			Msg:  "参数错误: " + err.Error(),
 		})
 		return
 	}
 
-	var page Page
-	if err := ctx.Bind(&page); err != nil {
-		return
+	offsetStr := ctx.Query("offset")
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 4,
+			Msg:  "参数错误: " + err.Error(),
+		})
 	}
 
-	comments, err := h.commentSvc.GetByArticleId(ctx, articleId, page.Offset, page.Limit)
+	limitStr := ctx.Query("limit")
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 4,
+			Msg:  "参数错误: " + err.Error(),
+		})
+	}
+
+	comments, err := h.commentSvc.GetByArticleId(ctx, articleId, offset, limit)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: 5,

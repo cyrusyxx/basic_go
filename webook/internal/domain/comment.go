@@ -3,12 +3,12 @@ package domain
 import "time"
 
 type Comment struct {
-	Id        int64
-	Content   string
-	ArticleId int64
-	User      User
-	Ctime     time.Time
-	Utime     time.Time
+	Id        int64  `json:"id"`
+	Content   string `json:"content"`
+	ArticleId int64  `json:"article_id"`
+	User      User   `json:"user"`
+	Ctime     time.Time `json:"ctime"`
+	Utime     time.Time `json:"utime"`
 }
 
 type CommentList []Comment
