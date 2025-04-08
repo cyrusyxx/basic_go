@@ -13,16 +13,23 @@ type CommentService interface {
 }
 
 type CommentServiceImpl struct {
-	repo repository.CommentRepository
+	repo     repository.CommentRepository
+	userRepo repository.UserRepository
 }
 
-func NewCommentServiceImpl(repo repository.CommentRepository) CommentService {
+func NewCommentServiceImpl(repo repository.CommentRepository, userRepo repository.UserRepository) CommentService {
 	return &CommentServiceImpl{
-		repo: repo,
+		repo:     repo,
+		userRepo: userRepo,
 	}
 }
 
 func (s *CommentServiceImpl) Create(ctx context.Context, comment domain.Comment) (int64, error) {
+	user, err := s.userRepo.FindByID(ctx, comment.User.Id)
+	if err != nil {
+		return 0, err
+	}
+	comment.User.NickName = user.NickName
 	return s.repo.Create(ctx, comment)
 }
 

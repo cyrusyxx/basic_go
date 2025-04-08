@@ -54,7 +54,7 @@ func InitWebServer() *App {
 	rankingService := service.NewBatchRankingService(rankingRepository, interactiveService, articleService)
 	commentDAO := dao.NewGORMCommentDAO(db)
 	commentRepository := repository.NewCommentRepo(commentDAO)
-	commentService := service.NewCommentServiceImpl(commentRepository)
+	commentService := service.NewCommentServiceImpl(commentRepository, userRepository)
 	articleHandler := web.NewArticleHandler(logger, articleService, interactiveService, rankingService, commentService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2WechatHandler, articleHandler)
 	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(interactiveRepository, client, logger)
