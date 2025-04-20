@@ -235,14 +235,14 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 
 	// Verify the length of the input
-	if len(req.NickName) > 8 {
+	if len(req.NickName) > 20 {
 		ctx.JSON(http.StatusOK, Result{
 			Code: 4,
 			Msg:  "Invalid nickname length",
 		})
 		return
 	}
-	if len(req.Birthday) != 10 {
+	if len(req.Birthday) != 10 && len(req.Birthday) != 0 {
 		ctx.JSON(http.StatusOK, Result{
 			Code: 4,
 			Msg:  "Invalid birthday length",
@@ -300,7 +300,7 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		})
 		return
 	}
-	
+
 	ctx.JSON(http.StatusOK, Result{
 		Code: 0,
 		Msg:  "Edit profile success",
