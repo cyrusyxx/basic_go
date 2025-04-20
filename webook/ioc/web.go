@@ -39,9 +39,10 @@ func InitMiddleware(redisdb redis.Cmdable, hdl ijwt.Handler, lger logger.Logger)
 	return []gin.HandlerFunc{
 		// Use Middlewares
 		cors.New(cors.Config{
-			//AllowAllOrigins: true,
-			AllowOrigins: []string{"http://localhost:30001",
-				"http://localhost:3000"},
+			AllowAllOrigins: true,
+			//AllowOrigins: []string{
+			//	"http://localhost:30001",
+			//	"http://localhost:3000"},
 			//AllowMethods: []string{"PUT", "PATCH", "POST", "GET"},
 			AllowHeaders:  []string{"Content-Type", "Authorization"},
 			ExposeHeaders: []string{"x-jwt-token", "x-refresh-token"},
