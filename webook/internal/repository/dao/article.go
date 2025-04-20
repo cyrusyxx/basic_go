@@ -187,6 +187,7 @@ func (d *GORMArticleDAO) ListPub(ctx context.Context,
 		Joins("LEFT JOIN users ON public_articles.author_id = users.id").
 		Where("public_articles.status = ? AND public_articles.utime < ?",
 			domain.ArticleStatusPublished, start.UnixMilli()).
+		Order("public_articles.utime DESC").
 		Offset(int(offset)).
 		Limit(int(limit)).
 		Find(&artis).Error
