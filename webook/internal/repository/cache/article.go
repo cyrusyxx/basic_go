@@ -43,13 +43,19 @@ func (r *RedisArticleCache) GetFirstPage(ctx context.Context, uid int64) ([]doma
 func (r *RedisArticleCache) SetFirstPage(ctx context.Context,
 	uid int64, artis []domain.Article) error {
 	// Change content to abstract
+	var tmpArtis []domain.Article
 	for i := 0; i < len(artis); i++ {
-		artis[i].Content = artis[i].Abstract()
+		tmpArtis = append(tmpArtis, artis[i])
+	}
+
+	// Change content to abstract
+	for i := 0; i < len(tmpArtis); i++ {
+		tmpArtis[i].Content = tmpArtis[i].Abstract()
 	}
 
 	// Save in cache
 	key := r.firstKey(uid)
-	val, err := json.Marshal(artis)
+	val, err := json.Marshal(tmpArtis)
 	if err != nil {
 		return err
 	}
